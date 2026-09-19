@@ -58,10 +58,15 @@ class TransactionRepository implements TransactionRepositoryInterface
 
     public function getAvailableYearsForUser(int $userId): array
     {
-        // 年セレクターの選択肢用に、収支が存在する年だけを重複なく降順で返す
+        // 年セレクターの選択肢用に、収支が存在する年だけを重複なく降順で返す。
+        //
+        // 年の抽出にMySQL固有のYEAR()は使わない。EXTRACTは標準SQLでMySQLとPostgreSQLの
+        // どちらでも動くため、Phase 4のPostgreSQL移行時に書き換えが不要になる。
+        // 列はtransactions.dateと修飾する（PostgreSQLでは修飾のないdateが型名と
+        // 解釈されうるため）。戻り値の型はドライバによって文字列にも数値にもなるのでintへ寄せる。
         return Transaction::query()
             ->where('user_id', $userId)
-            ->selectRaw('DISTINCT YEAR(date) as year')
+            ->selectRaw('DISTINCT EXTRACT(YEAR FROM transactions.date) as year')
             ->orderByDesc('year')
             ->pluck('year')
             ->map(fn ($year) => (int) $year)

@@ -39,11 +39,9 @@ class GetCategoryListTest extends TestCase
 
         $response = $this->actingAs($user)->getJson('/api/categories/get-category-list');
 
-        // typeはenum('income','expense')で、MySQLのORDER BYは文字列比較ではなく
-        // enumの定義順（income=1, expense=2）で並べるため、incomeが先に来る。
-        // 同じtype内はIDの昇順。
-        // 注意: この並びはenumの定義順に依存しており、Phase 4でPostgreSQLへ移行すると
-        // 文字列比較（expense → income）に変わる。そのときはこのテストが検知する
+        // 収入→支出の順、同じtype内はIDの昇順。
+        // Repository側で標準SQLのCASEにより順序を固定してあるため、
+        // MySQLでもPostgreSQLでも同じ並びになる
         $response->assertOk()
             ->assertJsonPath('0.id', $incomeFirst->id)
             ->assertJsonPath('1.id', $incomeSecond->id)

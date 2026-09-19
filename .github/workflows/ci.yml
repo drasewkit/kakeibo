@@ -47,7 +47,7 @@ jobs:
       run:
         working-directory: backend
 
-    # テストは本番と同じMySQLで実行する（TransactionRepositoryがMySQL固有のYEAR()を使うため）
+    # テストは本番と同じMySQLで実行する（SQLiteとはEXTRACTの有無やenumの並び順が異なるため）
     services:
       mysql:
         image: mysql:8.4

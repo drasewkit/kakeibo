@@ -27,8 +27,8 @@
              テストのリクエストホストはlocalhostなので明示する（含めないと$request->session()が
              「Session store not set on request」で落ち、本番と同じ認証経路を検証できない） -->
         <env name="SANCTUM_STATEFUL_DOMAINS" value="localhost"/>
-        <!-- テストは本番と同じMySQLで実行する。TransactionRepositoryがMySQL固有のYEAR()を
-             使っており、SQLiteでは「no such function: YEAR」で落ちるため。
+        <!-- テストは本番と同じMySQLで実行する。SQLiteは標準SQLのEXTRACTを持たず、
+             enum列のORDER BYの結果も本番と変わるため、engineを揃えて検証する。
              DB_HOSTは環境側で指定する（コンテナ内はmysql、ホストとCIは127.0.0.1） -->
         <env name="DB_CONNECTION" value="mysql"/>
         <env name="DB_DATABASE" value="testing"/>

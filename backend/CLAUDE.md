@@ -113,13 +113,23 @@ Laravel既定の`{message, errors}`は使わず、以下の形式に統一する
 
 - **エンドポイントを追加・変更したら必ずFeatureテストを書く**
 - テストは**本番と同じMySQL**で実行する（`phpunit.xml`、DBは`testing`）
-  - 当初SQLiteのインメモリDBを採用したが、`TransactionRepository::getAvailableYearsForUser()`が
-    MySQL固有の`YEAR()`を使っており「no such function: YEAR」で落ちたため2026-09-19に変更した
-  - engineが違うと**`enum`列の`ORDER BY`の結果まで変わる**（MySQLは定義順、SQLite/PostgreSQLは文字列比較）。
-    本番と同じengineで検証する
+  - 当初SQLiteのインメモリDBを採用したが、engine差で実際に2件の食い違いが出たため2026-09-19に変更した
+    （`YEAR()`が動かない / `enum`列の`ORDER BY`の結果が逆になる）
   - `DB_HOST`は環境側で与える。コンテナ内は`mysql`、ホストとCIは`127.0.0.1`
     （ホストから実行する場合は`DB_HOST=127.0.0.1 php artisan test`）
   - 再検討条件: Phase 4でPostgreSQLへ移行したら、そちらに合わせる
+
+### SQLはengine非依存に書く
+
+- **特定のDBだけの関数・構文を使わない。** Phase 4でMySQLからPostgreSQLへ移行する計画があり、
+  移行時に黙って壊れる、あるいは黙って挙動が変わる箇所を残さない
+- 実例（いずれも2026-09-19に修正済み）:
+  - 年の抽出に`YEAR()`（MySQL専用）ではなく`EXTRACT(YEAR FROM ...)`（標準SQL）を使う。
+    列は`transactions.date`のように修飾する（PostgreSQLでは修飾のない`date`が型名と解釈されうる）
+  - `enum`列を`ORDER BY`にそのまま渡さない。MySQLは定義順、PostgreSQLは文字列比較で並ぶため
+    結果が変わる。意図した順序は標準SQLの`CASE`で明示する
+- 生SQL（`selectRaw` / `orderByRaw`等）を足すときは、MySQLとPostgreSQLの双方で成立するか確認する
+- 再検討条件: なし
 - 最低限の観点:
   - 正常系のレスポンス形（Resourceが定義した通りのキーが返るか）
   - 未ログイン時に401（`UNAUTHENTICATED`）
