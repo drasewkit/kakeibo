@@ -81,7 +81,7 @@ function TransactionRow({
 }) {
   const [open, setOpen] = useState(false);
   const hasMemo = Boolean(transaction.memo);
-  const isExpandable = hasMemo || transaction.has_image;
+  const isExpandable = hasMemo || transaction.hasImage;
 
   return (
     <>
@@ -103,7 +103,7 @@ function TransactionRow({
         <TableCell sx={{ color: "text.secondary" }}>
           {isExpandable ? (
             <Stack direction="row" spacing={0.5} sx={{ alignItems: "center" }}>
-              {transaction.has_image && (
+              {transaction.hasImage && (
                 <ImageOutlinedIcon
                   fontSize="small"
                   sx={{ flexShrink: 0, color: "action.active" }}
@@ -186,7 +186,7 @@ function TransactionRow({
                     {transaction.memo}
                   </Typography>
                 )}
-                {transaction.has_image && (
+                {transaction.hasImage && (
                   <TransactionImage
                     transactionId={transaction.id}
                     sx={{ maxWidth: 280, maxHeight: 280, borderRadius: 1 }}

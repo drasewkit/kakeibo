@@ -39,7 +39,7 @@ export function RegisterPage() {
         name,
         email,
         password,
-        password_confirmation: passwordConfirmation,
+        passwordConfirmation: passwordConfirmation,
       },
       { onSuccess: () => router.push("/transactions") },
     );

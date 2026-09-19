@@ -15,7 +15,7 @@ export function useTransactions(filters: TransactionFilters) {
     queryKey: ["transactions", filters],
     queryFn: async () => {
       const { data } = await apiClient.get<TransactionListResponse>(
-        "/api/transactions/get-transaction-list",
+        "/api/transactions/get-list",
         { params: filters },
       );
       return data;
@@ -29,7 +29,7 @@ export function useCreateTransaction() {
   return useMutation({
     mutationFn: async (input: TransactionInput) => {
       const { data } = await apiClient.post<Transaction>(
-        "/api/transactions/create-transaction",
+        "/api/transactions/create",
         input,
       );
       return data;
@@ -54,8 +54,8 @@ export function useUpdateTransaction() {
     }) => {
       // PUT/PATCHではなくPOSTに統一する方針のため、更新対象のIDはボディに含める
       const { data } = await apiClient.post<Transaction>(
-        "/api/transactions/update-transaction",
-        { transaction_id: id, ...input },
+        "/api/transactions/update",
+        { transactionId: id, ...input },
       );
       return data;
     },
@@ -71,8 +71,8 @@ export function useDeleteTransaction() {
   return useMutation({
     mutationFn: async (id: number) => {
       // DELETEではなくPOSTに統一する方針のため、削除対象のIDはボディに含める
-      await apiClient.post("/api/transactions/delete-transaction", {
-        transaction_id: id,
+      await apiClient.post("/api/transactions/delete", {
+        transactionId: id,
       });
     },
     onSuccess: () => {
@@ -88,10 +88,10 @@ export function useUploadTransactionImage() {
   return useMutation({
     mutationFn: async ({ id, image }: { id: number; image: File }) => {
       const formData = new FormData();
-      formData.append("transaction_id", String(id));
+      formData.append("transactionId", String(id));
       formData.append("image", image);
       const { data } = await apiClient.post<Transaction>(
-        "/api/transactions/upload-transaction-image",
+        "/api/transactions/upload-image",
         formData,
       );
       return data;
@@ -109,8 +109,8 @@ export function useDeleteTransactionImage() {
   return useMutation({
     mutationFn: async (id: number) => {
       const { data } = await apiClient.post<Transaction>(
-        "/api/transactions/delete-transaction-image",
-        { transaction_id: id },
+        "/api/transactions/delete-image",
+        { transactionId: id },
       );
       return data;
     },

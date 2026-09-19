@@ -28,8 +28,8 @@ export function TransactionImage({
     let cancelled = false;
 
     apiClient
-      .get("/api/transactions/get-transaction-image", {
-        params: { transaction_id: transactionId },
+      .get("/api/transactions/get-image", {
+        params: { transactionId: transactionId },
         responseType: "blob",
       })
       .then(({ data }) => {

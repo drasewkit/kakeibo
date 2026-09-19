@@ -8,7 +8,7 @@ export function useUser() {
     queryKey: ["user"],
     queryFn: async () => {
       try {
-        const { data } = await apiClient.get<User>("/api/get-user");
+        const { data } = await apiClient.get<User>("/api/auth/get-user");
         return data;
       } catch {
         return null;
@@ -25,7 +25,7 @@ export function useLogin() {
     mutationFn: async (input: { email: string; password: string }) => {
       // ログイン前に必ずCSRFクッキーを取得しておく
       await ensureCsrfCookie();
-      const { data } = await apiClient.post<User>("/api/login", input);
+      const { data } = await apiClient.post<User>("/api/auth/login", input);
       return data;
     },
     onSuccess: (user) => {
@@ -43,10 +43,10 @@ export function useRegister() {
       name: string;
       email: string;
       password: string;
-      password_confirmation: string;
+      passwordConfirmation: string;
     }) => {
       await ensureCsrfCookie();
-      const { data } = await apiClient.post<User>("/api/register", input);
+      const { data } = await apiClient.post<User>("/api/auth/register", input);
       return data;
     },
     onSuccess: (user) => {
@@ -61,7 +61,7 @@ export function useLogout() {
 
   return useMutation({
     mutationFn: async () => {
-      await apiClient.post("/api/logout");
+      await apiClient.post("/api/auth/logout");
     },
     onSuccess: () => {
       queryClient.setQueryData(["user"], null);

@@ -138,13 +138,13 @@ export function TransactionFilters({
             TransactionType | undefined;
           // 種別を切り替えたことで選択中のカテゴリが対象外になる場合はクリアする
           const selectedCategory = categories.find(
-            (c) => c.id === filters.category_id,
+            (c) => c.id === filters.categoryId,
           );
           const newCategoryId =
             newType && selectedCategory && selectedCategory.type !== newType
               ? undefined
-              : filters.category_id;
-          onChange({ ...filters, type: newType, category_id: newCategoryId });
+              : filters.categoryId;
+          onChange({ ...filters, type: newType, categoryId: newCategoryId });
         }}
         sx={{ minWidth: 110 }}
       >
@@ -156,11 +156,11 @@ export function TransactionFilters({
         select
         size="small"
         label="カテゴリ"
-        value={filters.category_id ?? ""}
+        value={filters.categoryId ?? ""}
         onChange={(e) =>
           onChange({
             ...filters,
-            category_id: e.target.value ? Number(e.target.value) : undefined,
+            categoryId: e.target.value ? Number(e.target.value) : undefined,
           })
         }
         sx={{ minWidth: 130 }}

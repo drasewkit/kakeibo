@@ -132,7 +132,7 @@ export function TransactionsPage() {
           <TransactionFilters
             filters={filters}
             onChange={handleFiltersChange}
-            availableYears={transactionsData?.available_years ?? []}
+            availableYears={transactionsData?.availableYears ?? []}
             categories={categories}
           />
           <Button

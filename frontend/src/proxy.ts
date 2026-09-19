@@ -7,7 +7,7 @@ const SESSION_COOKIE_NAME = "kakeibo-session";
 // セッションクッキーの有無だけを見る簡易チェックであり、実際の認証状態は
 // 保証しない（セッション切れでもクッキー自体は残るため）。
 // 未ログイン状態でのフラッシュ表示を防ぐためのUX目的のガードで、
-// 本当の認証チェックはクライアント側の/api/get-user呼び出し（401時リダイレクト）が担う。
+// 本当の認証チェックはクライアント側の/api/auth/get-user呼び出し（401時リダイレクト）が担う。
 export function proxy(request: NextRequest) {
   const hasSession = request.cookies.has(SESSION_COOKIE_NAME);
   const isPublicPath = PUBLIC_PATHS.some((path) =>

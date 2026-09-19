@@ -56,7 +56,7 @@ export function TransactionForm({
     initialValue?.type ?? "expense",
   );
   const [categoryId, setCategoryId] = useState<string>(
-    initialValue?.category_id ? String(initialValue.category_id) : "",
+    initialValue?.categoryId ? String(initialValue.categoryId) : "",
   );
   const [amount, setAmount] = useState(
     initialValue ? String(initialValue.amount) : "",
@@ -70,7 +70,7 @@ export function TransactionForm({
   const filteredCategories = categories.filter((c) => c.type === type);
   // 既存の添付画像 or 新たに選択した画像のどちらかがあればプレビューを表示する
   const hasVisibleImage =
-    Boolean(imageFile) || (Boolean(initialValue?.has_image) && !imageRemoved);
+    Boolean(imageFile) || (Boolean(initialValue?.hasImage) && !imageRemoved);
 
   // 選択中ファイルのプレビュー用オブジェクトURL。imageFileが変わるたびに再生成する
   const imagePreviewUrl = useMemo(
@@ -103,7 +103,7 @@ export function TransactionForm({
     onSubmit(
       {
         type,
-        category_id: categoryId ? Number(categoryId) : null,
+        categoryId: categoryId ? Number(categoryId) : null,
         amount: Number(amount),
         date,
         memo: memo || null,

@@ -16,7 +16,7 @@ export const apiClient = axios.create({
 apiClient.interceptors.response.use(
   (response) => response,
   (error) => {
-    const isAuthCheck = error.config?.url === "/api/get-user";
+    const isAuthCheck = error.config?.url === "/api/auth/get-user";
     if (
       error.response?.status === 401 &&
       !isAuthCheck &&
