@@ -2,7 +2,9 @@
 
 namespace App\Models;
 
+use Database\Factories\TransactionFactory;
 use Illuminate\Database\Eloquent\Casts\Attribute;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
@@ -11,6 +13,9 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  */
 class Transaction extends Model
 {
+    /** @use HasFactory<TransactionFactory> */
+    use HasFactory;
+
     protected $fillable = ['user_id', 'category_id', 'type', 'amount', 'date', 'memo', 'image_path'];
 
     // image_pathはストレージ内部のパスでありAPIレスポンスには含めない（has_imageのみ公開する）

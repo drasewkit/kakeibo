@@ -112,9 +112,14 @@ Laravel既定の`{message, errors}`は使わず、以下の形式に統一する
 ### テスト
 
 - **エンドポイントを追加・変更したら必ずFeatureテストを書く**
-- テストは**SQLiteのインメモリDB**で実行する（`phpunit.xml`）。CIにMySQLサービスを立てずに済み、
-  engine非依存のクエリを書く強制力が働く（Phase 4のPostgreSQL移行で効く）。
-  MySQL固有のSQLに依存する実装が必要になった場合はこの前提を見直す
+- テストは**本番と同じMySQL**で実行する（`phpunit.xml`、DBは`testing`）
+  - 当初SQLiteのインメモリDBを採用したが、`TransactionRepository::getAvailableYearsForUser()`が
+    MySQL固有の`YEAR()`を使っており「no such function: YEAR」で落ちたため2026-09-19に変更した
+  - engineが違うと**`enum`列の`ORDER BY`の結果まで変わる**（MySQLは定義順、SQLite/PostgreSQLは文字列比較）。
+    本番と同じengineで検証する
+  - `DB_HOST`は環境側で与える。コンテナ内は`mysql`、ホストとCIは`127.0.0.1`
+    （ホストから実行する場合は`DB_HOST=127.0.0.1 php artisan test`）
+  - 再検討条件: Phase 4でPostgreSQLへ移行したら、そちらに合わせる
 - 最低限の観点:
   - 正常系のレスポンス形（Resourceが定義した通りのキーが返るか）
   - 未ログイン時に401（`UNAUTHENTICATED`）

@@ -23,14 +23,15 @@
         <env name="BCRYPT_ROUNDS" value="4"/>
         <env name="BROADCAST_CONNECTION" value="null"/>
         <env name="CACHE_STORE" value="array"/>
-        <!-- テストはSQLiteのインメモリDBで実行する。CIにMySQLサービスを立てずに済み、
-             engine非依存のクエリを書く強制力が働く（Phase 4のPostgreSQL移行で効く） -->
         <!-- Sanctumのstatefulミドルウェアはこのドメインに一致した場合だけセッションを張る。
              テストのリクエストホストはlocalhostなので明示する（含めないと$request->session()が
              「Session store not set on request」で落ち、本番と同じ認証経路を検証できない） -->
         <env name="SANCTUM_STATEFUL_DOMAINS" value="localhost"/>
-        <env name="DB_CONNECTION" value="sqlite"/>
-        <env name="DB_DATABASE" value=":memory:"/>
+        <!-- テストは本番と同じMySQLで実行する。TransactionRepositoryがMySQL固有のYEAR()を
+             使っており、SQLiteでは「no such function: YEAR」で落ちるため。
+             DB_HOSTは環境側で指定する（コンテナ内はmysql、ホストとCIは127.0.0.1） -->
+        <env name="DB_CONNECTION" value="mysql"/>
+        <env name="DB_DATABASE" value="testing"/>
         <env name="DB_URL" value=""/>
         <env name="MAIL_MAILER" value="array"/>
         <env name="QUEUE_CONNECTION" value="sync"/>

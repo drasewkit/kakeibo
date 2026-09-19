@@ -29,21 +29,25 @@ class GetCategoryListTest extends TestCase
             ->assertJsonFragment(['name' => '給与', 'type' => 'income']);
     }
 
-    public function test_種類ごとにまとまり_i_d順で並ぶ(): void
+    public function test_種類ごとにまとまり登録順で並ぶ(): void
     {
         $user = User::factory()->create();
-        // 収入を先に作り、並び順がID順ではなく種類優先であることを確かめる
+        // 支出を収入の間に挟んで作り、並びがID順ではなく種類優先であることを確かめる
         $incomeFirst = Category::factory()->income()->create(['name' => '給与']);
         $expense = Category::factory()->expense()->create(['name' => '食費']);
         $incomeSecond = Category::factory()->income()->create(['name' => '副収入']);
 
         $response = $this->actingAs($user)->getJson('/api/categories/get-category-list');
 
-        // typeの昇順（expense → income）、同じtype内はIDの昇順
+        // typeはenum('income','expense')で、MySQLのORDER BYは文字列比較ではなく
+        // enumの定義順（income=1, expense=2）で並べるため、incomeが先に来る。
+        // 同じtype内はIDの昇順。
+        // 注意: この並びはenumの定義順に依存しており、Phase 4でPostgreSQLへ移行すると
+        // 文字列比較（expense → income）に変わる。そのときはこのテストが検知する
         $response->assertOk()
-            ->assertJsonPath('0.id', $expense->id)
-            ->assertJsonPath('1.id', $incomeFirst->id)
-            ->assertJsonPath('2.id', $incomeSecond->id);
+            ->assertJsonPath('0.id', $incomeFirst->id)
+            ->assertJsonPath('1.id', $incomeSecond->id)
+            ->assertJsonPath('2.id', $expense->id);
     }
 
     public function test_カテゴリが未登録なら空配列を返す(): void
