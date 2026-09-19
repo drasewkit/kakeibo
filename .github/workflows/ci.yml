@@ -29,6 +29,11 @@ jobs:
       - name: ESLint
         run: npm run lint
 
+      # Next.jsが.next/types/に生成するルート型（LayoutProps等）はリポジトリに含まれない。
+      # 生成しないとtscがCannot find name 'LayoutProps'で落ちる
+      - name: ルート型の生成
+        run: npx next typegen
+
       - name: 型検査
         run: npx tsc --noEmit
 
