@@ -1,3 +1,10 @@
+# node_modulesはdepsステージでnpm ciしたものを使う。ホスト側のものは持ち込まない
 node_modules
 .next
+out
+
+.env
+.env.*
+
 .git
+assets

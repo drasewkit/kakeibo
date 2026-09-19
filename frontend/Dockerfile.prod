@@ -1,0 +1,36 @@
+# 本番用のフロントエンド。開発用Dockerfileはnpm run devで起動するため別物として分ける。
+# t4g.micro(1GiB)ではnext devが400〜800MB使いメモリが足りないので、本番ビルドを使う。
+
+# --- 依存のインストール ---
+FROM node:22-alpine AS deps
+WORKDIR /app
+COPY package.json package-lock.json ./
+RUN npm ci
+
+# --- ビルド ---
+FROM node:22-alpine AS builder
+WORKDIR /app
+COPY --from=deps /app/node_modules ./node_modules
+COPY . .
+# APIは同一オリジンで配信するため NEXT_PUBLIC_API_URL は設定しない。
+# axiosのbaseURLがundefinedになり、相対パスとして同じホストへ飛ぶ
+RUN npm run build
+
+# --- 実行 ---
+FROM node:22-alpine AS runner
+WORKDIR /app
+ENV NODE_ENV=production
+ENV PORT=3000
+ENV HOSTNAME=0.0.0.0
+
+# rootで動かさない
+RUN addgroup -g 1001 -S nodejs && adduser -S nextjs -u 1001
+
+# standaloneはpublicと.next/staticを含まないため個別にコピーする
+COPY --from=builder /app/.next/standalone ./
+COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
+COPY --from=builder /app/public ./public
+
+USER nextjs
+EXPOSE 3000
+CMD ["node", "server.js"]

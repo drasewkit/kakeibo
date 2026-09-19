@@ -1,0 +1,50 @@
+# 本番用のバックエンド。開発はLaravel Sailのランタイムを使っているが、あれは
+# 開発用でartisan serve（単一スレッドのPHP組み込みサーバ）で動くため本番には向かない。
+# ここではphp-fpmを使い、前段のnginxからFastCGIで受ける。
+
+# --- Composerの依存解決 ---
+FROM composer:2 AS vendor
+WORKDIR /app
+COPY composer.json composer.lock ./
+# 本番に開発用パッケージ（Pint/PHPStan/ide-helper等）は入れない
+RUN composer install \
+    --no-dev \
+    --no-interaction \
+    --no-progress \
+    --prefer-dist \
+    --optimize-autoloader \
+    --no-scripts
+
+# --- 実行 ---
+FROM php:8.5-fpm-alpine AS runner
+WORKDIR /var/www/html
+
+# pdo_mysql: MySQL接続 / bcmath: Laravelが推奨
+# opcacheはphp:8.5イメージに組み込み済みのため入れない
+# （入れようとすると「cp: can't stat 'modules/*'」で失敗する）
+RUN docker-php-ext-install pdo_mysql bcmath
+
+# opcacheの設定。メモリが限られるt4g.microに合わせて控えめにする
+RUN { \
+      echo 'opcache.enable=1'; \
+      echo 'opcache.memory_consumption=64'; \
+      echo 'opcache.interned_strings_buffer=8'; \
+      echo 'opcache.max_accelerated_files=10000'; \
+      echo 'opcache.validate_timestamps=0'; \
+    } > /usr/local/etc/php/conf.d/opcache.ini
+
+# 画像添付は5MBまで許可しているため、アップロード上限をそれに合わせる
+RUN { \
+      echo 'upload_max_filesize=6M'; \
+      echo 'post_max_size=8M'; \
+      echo 'memory_limit=256M'; \
+    } > /usr/local/etc/php/conf.d/app.ini
+
+COPY --from=vendor /app/vendor ./vendor
+COPY . .
+
+# storageとbootstrap/cacheはphp-fpmの実行ユーザーが書き込める必要がある
+RUN chown -R www-data:www-data storage bootstrap/cache
+
+EXPOSE 9000
+CMD ["php-fpm"]
