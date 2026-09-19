@@ -25,5 +25,8 @@ export function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"],
+  // 静的アセットはガードの対象外にする。特にPWAのマニフェストとアイコンは
+  // 未ログイン状態（かつクッキーを送らない条件）で取得されるため、
+  // ここで除外しないと/loginへリダイレクトされホーム画面へのインストールが失敗する
+  matcher: ["/((?!_next/static|_next/image|.*\\.(?:png|svg|ico|webmanifest)$).*)"],
 };

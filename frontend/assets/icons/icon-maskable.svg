@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+  <!-- 名刺（business-card-2026）のカラーブロックを流用した帳簿モチーフ。
+       文字を使わないため、将来アプリ名を変更してもそのまま使い続けられる -->
+  <rect width="512" height="512" fill="#367FAE"/>
+  <g transform="translate(256 256) scale(0.82) translate(-256 -256)">
+    <!-- 帳簿のページ -->
+    <rect x="96" y="120" width="320" height="272" rx="28" fill="#FBFDFE"/>
+    <!-- 背表紙（名刺の左カラーブロックに対応する濃い差し色） -->
+    <path d="M96 148 A28 28 0 0 1 124 120 L150 120 L150 392 L124 392 A28 28 0 0 1 96 364 Z" fill="#236A92"/>
+    <!-- 記帳された行 -->
+    <rect x="192" y="192" width="188" height="16" rx="8" fill="#9FB8BD"/>
+    <rect x="192" y="244" width="144" height="16" rx="8" fill="#9FB8BD"/>
+    <!-- 合計行 -->
+    <rect x="192" y="300" width="112" height="20" rx="10" fill="#236A92"/>
+  </g>
+</svg>
