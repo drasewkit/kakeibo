@@ -7,7 +7,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
 /**
- * POST /api/logout のFeatureテスト
+ * POST /api/auth/logout のFeatureテスト
  */
 class LogoutTest extends TestCase
 {
@@ -17,7 +17,7 @@ class LogoutTest extends TestCase
     {
         $user = User::factory()->create();
 
-        $response = $this->actingAs($user)->postJson('/api/logout');
+        $response = $this->actingAs($user)->postJson('/api/auth/logout');
 
         $response->assertNoContent();
 
@@ -30,7 +30,7 @@ class LogoutTest extends TestCase
 
     public function test_未ログインでは401になる(): void
     {
-        $response = $this->postJson('/api/logout');
+        $response = $this->postJson('/api/auth/logout');
 
         $response->assertUnauthorized();
     }

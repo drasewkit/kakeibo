@@ -7,7 +7,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
 /**
- * GET /api/get-user のFeatureテスト
+ * GET /api/auth/get-user のFeatureテスト
  */
 class GetUserTest extends TestCase
 {
@@ -20,7 +20,7 @@ class GetUserTest extends TestCase
             'email' => 'taro@example.com',
         ]);
 
-        $response = $this->actingAs($user)->getJson('/api/get-user');
+        $response = $this->actingAs($user)->getJson('/api/auth/get-user');
 
         $response->assertOk()
             ->assertJsonPath('id', $user->id)
@@ -32,7 +32,7 @@ class GetUserTest extends TestCase
     {
         $user = User::factory()->create();
 
-        $response = $this->actingAs($user)->getJson('/api/get-user');
+        $response = $this->actingAs($user)->getJson('/api/auth/get-user');
 
         $response->assertJsonMissingPath('password')
             ->assertJsonMissingPath('remember_token');
@@ -43,7 +43,7 @@ class GetUserTest extends TestCase
         $user = User::factory()->create();
         User::factory()->create(['email' => 'other@example.com']);
 
-        $response = $this->actingAs($user)->getJson('/api/get-user');
+        $response = $this->actingAs($user)->getJson('/api/auth/get-user');
 
         $response->assertJsonPath('id', $user->id)
             ->assertJsonPath('email', $user->email);
@@ -51,7 +51,7 @@ class GetUserTest extends TestCase
 
     public function test_未ログインでは401になる(): void
     {
-        $response = $this->getJson('/api/get-user');
+        $response = $this->getJson('/api/auth/get-user');
 
         $response->assertUnauthorized();
     }

@@ -21,7 +21,7 @@ class UploadTransactionImageRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'transaction_id' => ['required', 'integer'],
+            'transactionId' => ['required', 'integer'],
             // レシート等の写真を想定し、5MBまで・画像形式のみ許可する
             'image' => ['required', 'image', 'mimes:jpg,jpeg,png,heic,webp', 'max:5120'],
         ];

@@ -21,7 +21,7 @@ class DeleteTransactionImageRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'transaction_id' => ['required', 'integer'],
+            'transactionId' => ['required', 'integer'],
         ];
     }
 }

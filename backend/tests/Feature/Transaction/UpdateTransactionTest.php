@@ -9,13 +9,13 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
 /**
- * POST /api/transactions/update-transaction のFeatureテスト
+ * POST /api/transactions/update のFeatureテスト
  */
 class UpdateTransactionTest extends TestCase
 {
     use RefreshDatabase;
 
-    private const URI = '/api/transactions/update-transaction';
+    private const URI = '/api/transactions/update';
 
     /**
      * @return array<string, mixed>
@@ -23,9 +23,9 @@ class UpdateTransactionTest extends TestCase
     private function validPayload(int $transactionId, array $overrides = []): array
     {
         return array_merge([
-            'transaction_id' => $transactionId,
+            'transactionId' => $transactionId,
             'type' => 'expense',
-            'category_id' => Category::factory()->expense()->create()->id,
+            'categoryId' => Category::factory()->expense()->create()->id,
             'amount' => 5000,
             'date' => '2026-09-19',
             'memo' => '更新後',
@@ -59,7 +59,7 @@ class UpdateTransactionTest extends TestCase
         // コントローラーが更新内容からtransaction_idを除いていることを確かめる
         $response = $this->actingAs($user)->postJson(self::URI, $this->validPayload($transaction->id));
 
-        $response->assertOk()->assertJsonMissingPath('transaction_id');
+        $response->assertOk()->assertJsonMissingPath('transactionId');
     }
 
     public function test_他人の収支は404になる(): void
@@ -88,7 +88,7 @@ class UpdateTransactionTest extends TestCase
 
         $this->actingAs($user)->postJson(self::URI, [])
             ->assertStatus(422)
-            ->assertJsonValidationErrors(['transaction_id', 'type', 'amount', 'date']);
+            ->assertJsonStructure(['error' => ['fields' => ['transactionId', 'type', 'amount', 'date']]]);
     }
 
     public function test_未ログインでは401になる(): void

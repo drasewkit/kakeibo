@@ -8,13 +8,13 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
 /**
- * POST /api/transactions/create-transaction のFeatureテスト
+ * POST /api/transactions/create のFeatureテスト
  */
 class CreateTransactionTest extends TestCase
 {
     use RefreshDatabase;
 
-    private const URI = '/api/transactions/create-transaction';
+    private const URI = '/api/transactions/create';
 
     /**
      * @return array<string, mixed>
@@ -23,7 +23,7 @@ class CreateTransactionTest extends TestCase
     {
         return array_merge([
             'type' => 'expense',
-            'category_id' => Category::factory()->expense()->create()->id,
+            'categoryId' => Category::factory()->expense()->create()->id,
             'amount' => 1280,
             'date' => '2026-09-19',
             'memo' => 'スーパー',
@@ -55,10 +55,10 @@ class CreateTransactionTest extends TestCase
 
         // user_idを指定しても無視され、ログインユーザーのものになる
         $response = $this->actingAs($user)->postJson(self::URI, $this->validPayload([
-            'user_id' => $other->id,
+            'userId' => $other->id,
         ]));
 
-        $response->assertStatus(201)->assertJsonPath('user_id', $user->id);
+        $response->assertStatus(201)->assertJsonPath('userId', $user->id);
     }
 
     public function test_カテゴリなしでも登録できる(): void
@@ -66,10 +66,10 @@ class CreateTransactionTest extends TestCase
         $user = User::factory()->create();
 
         $response = $this->actingAs($user)->postJson(self::URI, $this->validPayload([
-            'category_id' => null,
+            'categoryId' => null,
         ]));
 
-        $response->assertStatus(201)->assertJsonPath('category_id', null);
+        $response->assertStatus(201)->assertJsonPath('categoryId', null);
     }
 
     public function test_必須項目が欠けていると422になる(): void
@@ -78,16 +78,16 @@ class CreateTransactionTest extends TestCase
 
         $this->actingAs($user)->postJson(self::URI, [])
             ->assertStatus(422)
-            ->assertJsonValidationErrors(['type', 'amount', 'date']);
+            ->assertJsonStructure(['error' => ['fields' => ['type', 'amount', 'date']]]);
     }
 
     public function test_存在しないカテゴリは422になる(): void
     {
         $user = User::factory()->create();
 
-        $this->actingAs($user)->postJson(self::URI, $this->validPayload(['category_id' => 999999]))
+        $this->actingAs($user)->postJson(self::URI, $this->validPayload(['categoryId' => 999999]))
             ->assertStatus(422)
-            ->assertJsonValidationErrors(['category_id']);
+            ->assertJsonStructure(['error' => ['fields' => ['categoryId']]]);
     }
 
     public function test_金額が0以下だと422になる(): void
@@ -96,7 +96,7 @@ class CreateTransactionTest extends TestCase
 
         $this->actingAs($user)->postJson(self::URI, $this->validPayload(['amount' => 0]))
             ->assertStatus(422)
-            ->assertJsonValidationErrors(['amount']);
+            ->assertJsonStructure(['error' => ['fields' => ['amount']]]);
     }
 
     public function test_金額に小数は許可しない(): void
@@ -105,7 +105,7 @@ class CreateTransactionTest extends TestCase
 
         $this->actingAs($user)->postJson(self::URI, $this->validPayload(['amount' => 1280.5]))
             ->assertStatus(422)
-            ->assertJsonValidationErrors(['amount']);
+            ->assertJsonStructure(['error' => ['fields' => ['amount']]]);
     }
 
     public function test_カテゴリの種類が収支の種類と違うと422になる(): void
@@ -116,10 +116,10 @@ class CreateTransactionTest extends TestCase
         // 支出の収支に収入カテゴリを指定する
         $response = $this->actingAs($user)->postJson(self::URI, $this->validPayload([
             'type' => 'expense',
-            'category_id' => $incomeCategory->id,
+            'categoryId' => $incomeCategory->id,
         ]));
 
-        $response->assertStatus(422)->assertJsonValidationErrors(['category_id']);
+        $response->assertStatus(422)->assertJsonStructure(['error' => ['fields' => ['categoryId']]]);
     }
 
     public function test_カテゴリの種類が一致していれば登録できる(): void
@@ -129,7 +129,7 @@ class CreateTransactionTest extends TestCase
 
         $response = $this->actingAs($user)->postJson(self::URI, $this->validPayload([
             'type' => 'income',
-            'category_id' => $incomeCategory->id,
+            'categoryId' => $incomeCategory->id,
         ]));
 
         $response->assertStatus(201)->assertJsonPath('type', 'income');
@@ -141,7 +141,7 @@ class CreateTransactionTest extends TestCase
 
         $this->actingAs($user)->postJson(self::URI, $this->validPayload(['type' => 'unknown']))
             ->assertStatus(422)
-            ->assertJsonValidationErrors(['type']);
+            ->assertJsonStructure(['error' => ['fields' => ['type']]]);
     }
 
     public function test_未ログインでは401になる(): void

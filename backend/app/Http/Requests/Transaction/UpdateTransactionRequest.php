@@ -5,8 +5,7 @@ namespace App\Http\Requests\Transaction;
 use Illuminate\Contracts\Validation\ValidationRule;
 
 /**
- * 収支更新リクエストのバリデーション。
- * CreateTransactionRequestを継承し、更新対象を指定するtransaction_idのみ追加する
+ * 収支更新リクエストのバリデーション（登録時の項目に更新対象のIDを加えたもの）
  */
 class UpdateTransactionRequest extends CreateTransactionRequest
 {
@@ -16,7 +15,7 @@ class UpdateTransactionRequest extends CreateTransactionRequest
     public function rules(): array
     {
         return [
-            'transaction_id' => ['required', 'integer'],
+            'transactionId' => ['required', 'integer'],
             ...parent::rules(),
         ];
     }

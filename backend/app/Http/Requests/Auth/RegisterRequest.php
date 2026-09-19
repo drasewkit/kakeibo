@@ -25,8 +25,8 @@ class RegisterRequest extends FormRequest
             'name' => ['required', 'string', 'max:255'],
             // メールアドレスの重複登録を防ぐ
             'email' => ['required', 'email', 'unique:users,email'],
-            // password_confirmationとの一致・最低文字数を検証
-            'password' => ['required', 'confirmed', Password::min(8)],
+            // passwordConfirmationとの一致・最低文字数を検証
+            'password' => ['required', 'confirmed:passwordConfirmation', Password::min(8)],
         ];
     }
 }

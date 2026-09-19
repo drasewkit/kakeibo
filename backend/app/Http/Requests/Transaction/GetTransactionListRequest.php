@@ -8,7 +8,7 @@ use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
 /**
- * 収支一覧取得リクエストのバリデーション（すべて任意の絞り込み条件）
+ * 収支一覧取得リクエストのバリデーション（絞り込み条件はすべて任意）
  */
 class GetTransactionListRequest extends FormRequest
 {
@@ -26,8 +26,24 @@ class GetTransactionListRequest extends FormRequest
             'year' => ['nullable', 'integer'],
             'month' => ['nullable', 'integer', 'between:1,12'],
             'type' => ['nullable', Rule::enum(TransactionType::class)],
-            'category_id' => ['nullable', 'integer'],
+            'categoryId' => ['nullable', 'integer'],
             'page' => ['nullable', 'integer', 'min:1'],
+        ];
+    }
+
+    /**
+     * Repositoryが期待するキー（DBのカラム名に寄せたsnake_case）に変換する
+     *
+     * @return array<string, mixed>
+     */
+    public function toFilters(): array
+    {
+        return [
+            'year' => $this->validated('year'),
+            'month' => $this->validated('month'),
+            'type' => $this->validated('type'),
+            'category_id' => $this->validated('categoryId'),
+            'page' => $this->validated('page'),
         ];
     }
 }

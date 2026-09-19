@@ -8,11 +8,13 @@ use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Carbon;
 
 /**
  * 収支（1件の収入または支出）
  *
  * @property TransactionType $type casts()でenumに変換される
+ * @property Carbon $date casts()でCarbonに変換される
  */
 class Transaction extends Model
 {

@@ -8,13 +8,13 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
 /**
- * GET /api/transactions/get-transaction-detail のFeatureテスト
+ * GET /api/transactions/get-detail のFeatureテスト
  */
 class GetTransactionDetailTest extends TestCase
 {
     use RefreshDatabase;
 
-    private const URI = '/api/transactions/get-transaction-detail';
+    private const URI = '/api/transactions/get-detail';
 
     public function test_自分の収支を1件取得できる(): void
     {
@@ -24,13 +24,13 @@ class GetTransactionDetailTest extends TestCase
             'memo' => 'スーパー',
         ]);
 
-        $response = $this->actingAs($user)->getJson(self::URI."?transaction_id={$transaction->id}");
+        $response = $this->actingAs($user)->getJson(self::URI."?transactionId={$transaction->id}");
 
         $response->assertOk()
             ->assertJsonPath('id', $transaction->id)
             ->assertJsonPath('amount', 1280)
             ->assertJsonPath('memo', 'スーパー')
-            ->assertJsonStructure(['id', 'category', 'type', 'amount', 'date', 'memo', 'has_image']);
+            ->assertJsonStructure(['id', 'category', 'type', 'amount', 'date', 'memo', 'hasImage']);
     }
 
     public function test_画像のパスはレスポンスに含まれない(): void
@@ -40,11 +40,11 @@ class GetTransactionDetailTest extends TestCase
             'image_path' => 'transaction-images/1/secret.jpg',
         ]);
 
-        $response = $this->actingAs($user)->getJson(self::URI."?transaction_id={$transaction->id}");
+        $response = $this->actingAs($user)->getJson(self::URI."?transactionId={$transaction->id}");
 
         $response->assertOk()
-            ->assertJsonMissingPath('image_path')
-            ->assertJsonPath('has_image', true);
+            ->assertJsonMissingPath('imagePath')
+            ->assertJsonPath('hasImage', true);
     }
 
     public function test_他人の収支は404になる(): void
@@ -53,7 +53,7 @@ class GetTransactionDetailTest extends TestCase
         $other = User::factory()->create();
         $transaction = Transaction::factory()->for($other)->create();
 
-        $response = $this->actingAs($user)->getJson(self::URI."?transaction_id={$transaction->id}");
+        $response = $this->actingAs($user)->getJson(self::URI."?transactionId={$transaction->id}");
 
         // 所有権の有無を漏らさないため、存在しない場合と区別せず404にする
         $response->assertNotFound();
@@ -63,7 +63,7 @@ class GetTransactionDetailTest extends TestCase
     {
         $user = User::factory()->create();
 
-        $this->actingAs($user)->getJson(self::URI.'?transaction_id=999999')->assertNotFound();
+        $this->actingAs($user)->getJson(self::URI.'?transactionId=999999')->assertNotFound();
     }
 
     public function test_i_dが無いと422になる(): void
@@ -72,11 +72,11 @@ class GetTransactionDetailTest extends TestCase
 
         $this->actingAs($user)->getJson(self::URI)
             ->assertStatus(422)
-            ->assertJsonValidationErrors(['transaction_id']);
+            ->assertJsonStructure(['error' => ['fields' => ['transactionId']]]);
     }
 
     public function test_未ログインでは401になる(): void
     {
-        $this->getJson(self::URI.'?transaction_id=1')->assertUnauthorized();
+        $this->getJson(self::URI.'?transactionId=1')->assertUnauthorized();
     }
 }

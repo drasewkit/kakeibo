@@ -10,13 +10,13 @@ use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
 /**
- * POST /api/transactions/delete-transaction-image のFeatureテスト
+ * POST /api/transactions/delete-image のFeatureテスト
  */
 class DeleteTransactionImageTest extends TestCase
 {
     use RefreshDatabase;
 
-    private const URI = '/api/transactions/delete-transaction-image';
+    private const URI = '/api/transactions/delete-image';
 
     public function test_添付画像を削除できる(): void
     {
@@ -25,9 +25,9 @@ class DeleteTransactionImageTest extends TestCase
         $path = UploadedFile::fake()->image('receipt.jpg')->store('transaction-images/'.$user->id, 'local');
         $transaction = Transaction::factory()->for($user)->create(['image_path' => $path]);
 
-        $response = $this->actingAs($user)->postJson(self::URI, ['transaction_id' => $transaction->id]);
+        $response = $this->actingAs($user)->postJson(self::URI, ['transactionId' => $transaction->id]);
 
-        $response->assertOk()->assertJsonPath('has_image', false);
+        $response->assertOk()->assertJsonPath('hasImage', false);
         Storage::disk('local')->assertMissing($path);
         $this->assertNull($transaction->refresh()->image_path);
     }
@@ -39,7 +39,7 @@ class DeleteTransactionImageTest extends TestCase
         $path = UploadedFile::fake()->image('receipt.jpg')->store('transaction-images/'.$user->id, 'local');
         $transaction = Transaction::factory()->for($user)->create(['image_path' => $path]);
 
-        $this->actingAs($user)->postJson(self::URI, ['transaction_id' => $transaction->id])->assertOk();
+        $this->actingAs($user)->postJson(self::URI, ['transactionId' => $transaction->id])->assertOk();
 
         $this->assertDatabaseHas('transactions', ['id' => $transaction->id]);
     }
@@ -49,9 +49,9 @@ class DeleteTransactionImageTest extends TestCase
         $user = User::factory()->create();
         $transaction = Transaction::factory()->for($user)->create(['image_path' => null]);
 
-        $this->actingAs($user)->postJson(self::URI, ['transaction_id' => $transaction->id])
+        $this->actingAs($user)->postJson(self::URI, ['transactionId' => $transaction->id])
             ->assertOk()
-            ->assertJsonPath('has_image', false);
+            ->assertJsonPath('hasImage', false);
     }
 
     public function test_他人の収支の画像は404になり削除されない(): void
@@ -62,7 +62,7 @@ class DeleteTransactionImageTest extends TestCase
         $path = UploadedFile::fake()->image('receipt.jpg')->store('transaction-images/'.$other->id, 'local');
         $transaction = Transaction::factory()->for($other)->create(['image_path' => $path]);
 
-        $this->actingAs($user)->postJson(self::URI, ['transaction_id' => $transaction->id])
+        $this->actingAs($user)->postJson(self::URI, ['transactionId' => $transaction->id])
             ->assertNotFound();
 
         Storage::disk('local')->assertExists($path);
@@ -73,7 +73,7 @@ class DeleteTransactionImageTest extends TestCase
     {
         $user = User::factory()->create();
 
-        $this->actingAs($user)->postJson(self::URI, ['transaction_id' => 999999])->assertNotFound();
+        $this->actingAs($user)->postJson(self::URI, ['transactionId' => 999999])->assertNotFound();
     }
 
     public function test_i_dが無いと422になる(): void
@@ -82,7 +82,7 @@ class DeleteTransactionImageTest extends TestCase
 
         $this->actingAs($user)->postJson(self::URI, [])
             ->assertStatus(422)
-            ->assertJsonValidationErrors(['transaction_id']);
+            ->assertJsonStructure(['error' => ['fields' => ['transactionId']]]);
     }
 
     public function test_未ログインでは401になる(): void

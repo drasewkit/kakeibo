@@ -7,7 +7,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
 /**
- * POST /api/register のFeatureテスト
+ * POST /api/auth/register のFeatureテスト
  */
 class RegisterTest extends TestCase
 {
@@ -24,13 +24,13 @@ class RegisterTest extends TestCase
             'name' => '高久 大祐',
             'email' => 'taro@example.com',
             'password' => 'password123',
-            'password_confirmation' => 'password123',
+            'passwordConfirmation' => 'password123',
         ], $overrides);
     }
 
     public function test_ユーザーを登録できる(): void
     {
-        $response = $this->postJson('/api/register', $this->validPayload());
+        $response = $this->postJson('/api/auth/register', $this->validPayload());
 
         $response->assertStatus(201)
             ->assertJsonPath('name', '高久 大祐')
@@ -41,14 +41,14 @@ class RegisterTest extends TestCase
 
     public function test_登録後はログイン状態になる(): void
     {
-        $this->postJson('/api/register', $this->validPayload());
+        $this->postJson('/api/auth/register', $this->validPayload());
 
         $this->assertAuthenticated();
     }
 
     public function test_パスワードはレスポンスに含まれない(): void
     {
-        $response = $this->postJson('/api/register', $this->validPayload());
+        $response = $this->postJson('/api/auth/register', $this->validPayload());
 
         $response->assertJsonMissingPath('password')
             ->assertJsonMissingPath('remember_token');
@@ -56,7 +56,7 @@ class RegisterTest extends TestCase
 
     public function test_パスワードはハッシュ化して保存される(): void
     {
-        $this->postJson('/api/register', $this->validPayload());
+        $this->postJson('/api/auth/register', $this->validPayload());
 
         $user = User::where('email', 'taro@example.com')->firstOrFail();
         $this->assertNotSame('password123', $user->password);
@@ -64,40 +64,40 @@ class RegisterTest extends TestCase
 
     public function test_必須項目が欠けていると422になる(): void
     {
-        $response = $this->postJson('/api/register', []);
+        $response = $this->postJson('/api/auth/register', []);
 
         $response->assertStatus(422)
-            ->assertJsonValidationErrors(['name', 'email', 'password']);
+            ->assertJsonStructure(['error' => ['fields' => ['name', 'email', 'password']]]);
     }
 
     public function test_登録済みのメールアドレスは422になる(): void
     {
         User::factory()->create(['email' => 'taro@example.com']);
 
-        $response = $this->postJson('/api/register', $this->validPayload());
+        $response = $this->postJson('/api/auth/register', $this->validPayload());
 
         $response->assertStatus(422)
-            ->assertJsonValidationErrors(['email']);
+            ->assertJsonStructure(['error' => ['fields' => ['email']]]);
     }
 
     public function test_確認用パスワードが一致しないと422になる(): void
     {
-        $response = $this->postJson('/api/register', $this->validPayload([
-            'password_confirmation' => 'different-password',
+        $response = $this->postJson('/api/auth/register', $this->validPayload([
+            'passwordConfirmation' => 'different-password',
         ]));
 
         $response->assertStatus(422)
-            ->assertJsonValidationErrors(['password']);
+            ->assertJsonStructure(['error' => ['fields' => ['password']]]);
     }
 
     public function test_パスワードが8文字未満だと422になる(): void
     {
-        $response = $this->postJson('/api/register', $this->validPayload([
+        $response = $this->postJson('/api/auth/register', $this->validPayload([
             'password' => 'short7c',
-            'password_confirmation' => 'short7c',
+            'passwordConfirmation' => 'short7c',
         ]));
 
         $response->assertStatus(422)
-            ->assertJsonValidationErrors(['password']);
+            ->assertJsonStructure(['error' => ['fields' => ['password']]]);
     }
 }

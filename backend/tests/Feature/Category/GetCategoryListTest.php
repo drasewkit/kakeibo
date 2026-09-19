@@ -9,7 +9,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
 /**
- * GET /api/categories/get-category-list のFeatureテスト
+ * GET /api/categories/get-list のFeatureテスト
  */
 class GetCategoryListTest extends TestCase
 {
@@ -21,7 +21,7 @@ class GetCategoryListTest extends TestCase
         Category::factory()->expense()->create(['name' => '食費']);
         Category::factory()->income()->create(['name' => '給与']);
 
-        $response = $this->actingAs($user)->getJson('/api/categories/get-category-list');
+        $response = $this->actingAs($user)->getJson('/api/categories/get-list');
 
         $response->assertOk()
             ->assertJsonCount(2)
@@ -37,7 +37,7 @@ class GetCategoryListTest extends TestCase
         $expense = Category::factory()->expense()->create(['name' => '食費']);
         $incomeSecond = Category::factory()->income()->create(['name' => '副収入']);
 
-        $response = $this->actingAs($user)->getJson('/api/categories/get-category-list');
+        $response = $this->actingAs($user)->getJson('/api/categories/get-list');
 
         // 収入→支出の順、同じtype内はIDの昇順。
         // Repository側で標準SQLのCASEにより順序を固定してあるため、
@@ -52,7 +52,7 @@ class GetCategoryListTest extends TestCase
     {
         $user = User::factory()->create();
 
-        $response = $this->actingAs($user)->getJson('/api/categories/get-category-list');
+        $response = $this->actingAs($user)->getJson('/api/categories/get-list');
 
         $response->assertOk()->assertExactJson([]);
     }
@@ -62,7 +62,7 @@ class GetCategoryListTest extends TestCase
         $user = User::factory()->create();
         $this->seed(CategorySeeder::class);
 
-        $response = $this->actingAs($user)->getJson('/api/categories/get-category-list');
+        $response = $this->actingAs($user)->getJson('/api/categories/get-list');
 
         // 支出9件 + 収入3件
         $response->assertOk()->assertJsonCount(12);
@@ -70,7 +70,7 @@ class GetCategoryListTest extends TestCase
 
     public function test_未ログインでは401になる(): void
     {
-        $response = $this->getJson('/api/categories/get-category-list');
+        $response = $this->getJson('/api/categories/get-list');
 
         $response->assertUnauthorized();
     }

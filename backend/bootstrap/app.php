@@ -1,5 +1,6 @@
 <?php
 
+use App\Exceptions\ApiExceptionRenderer;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -21,4 +22,13 @@ return Application::configure(basePath: dirname(__DIR__))
         $exceptions->shouldRenderJsonWhen(
             fn (Request $request) => $request->is('api/*') || $request->expectsJson(),
         );
+
+        // APIのエラーは独自エンベロープ { error: { code, message, fields } } に統一する
+        $exceptions->render(function (Throwable $e, Request $request) {
+            if (! $request->is('api/*') && ! $request->expectsJson()) {
+                return null;
+            }
+
+            return ApiExceptionRenderer::render($e);
+        });
     })->create();

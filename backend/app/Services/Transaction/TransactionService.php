@@ -23,14 +23,11 @@ class TransactionService
      */
     public function getList(int $userId, array $filters): array
     {
-        $transactions = $this->transactionRepository->paginateForUser($userId, $filters);
-        $summary = $this->transactionRepository->summarizeForUser($userId, $filters);
-        $availableYears = $this->transactionRepository->getAvailableYearsForUser($userId);
-
+        // レスポンスの形はResourceが決めるため、ここでは3つの値を素のまま返す
         return [
-            ...$transactions->toArray(),
-            'summary' => $summary,
-            'available_years' => $availableYears,
+            'paginator' => $this->transactionRepository->paginateForUser($userId, $filters),
+            'summary' => $this->transactionRepository->summarizeForUser($userId, $filters),
+            'availableYears' => $this->transactionRepository->getAvailableYearsForUser($userId),
         ];
     }
 

@@ -9,13 +9,13 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
 /**
- * GET /api/transactions/get-transaction-list のFeatureテスト
+ * GET /api/transactions/get-list のFeatureテスト
  */
 class GetTransactionListTest extends TestCase
 {
     use RefreshDatabase;
 
-    private const URI = '/api/transactions/get-transaction-list';
+    private const URI = '/api/transactions/get-list';
 
     public function test_自分の収支一覧を取得できる(): void
     {
@@ -27,11 +27,11 @@ class GetTransactionListTest extends TestCase
         $response->assertOk()
             ->assertJsonCount(3, 'data')
             ->assertJsonStructure([
-                'data' => [['id', 'user_id', 'category_id', 'category', 'type', 'amount', 'date', 'memo', 'has_image']],
+                'data' => [['id', 'userId', 'categoryId', 'category', 'type', 'amount', 'date', 'memo', 'hasImage']],
                 'summary' => ['income', 'expense', 'balance'],
-                'available_years',
-                'current_page',
-                'last_page',
+                'availableYears',
+                'currentPage',
+                'lastPage',
                 'total',
             ]);
     }
@@ -97,7 +97,7 @@ class GetTransactionListTest extends TestCase
         $target = Transaction::factory()->for($user)->create(['category_id' => $category->id]);
         Transaction::factory()->for($user)->create();
 
-        $response = $this->actingAs($user)->getJson(self::URI."?category_id={$category->id}");
+        $response = $this->actingAs($user)->getJson(self::URI."?categoryId={$category->id}");
 
         $response->assertOk()
             ->assertJsonCount(1, 'data')
@@ -143,7 +143,7 @@ class GetTransactionListTest extends TestCase
         $response = $this->actingAs($user)->getJson(self::URI);
 
         // 重複を除き降順。データの無い2025年は含まれない
-        $response->assertOk()->assertJsonPath('available_years', [2026, 2024]);
+        $response->assertOk()->assertJsonPath('availableYears', [2026, 2024]);
     }
 
     public function test_収支が無い場合も集計は0を返す(): void
@@ -157,7 +157,7 @@ class GetTransactionListTest extends TestCase
             ->assertJsonPath('summary.income', 0)
             ->assertJsonPath('summary.expense', 0)
             ->assertJsonPath('summary.balance', 0)
-            ->assertJsonPath('available_years', []);
+            ->assertJsonPath('availableYears', []);
     }
 
     public function test_不正な絞り込み条件は422になる(): void
@@ -167,7 +167,7 @@ class GetTransactionListTest extends TestCase
         $response = $this->actingAs($user)->getJson(self::URI.'?month=13&type=unknown');
 
         $response->assertStatus(422)
-            ->assertJsonValidationErrors(['month', 'type']);
+            ->assertJsonStructure(['error' => ['fields' => ['month', 'type']]]);
     }
 
     public function test_未ログインでは401になる(): void

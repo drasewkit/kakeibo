@@ -10,13 +10,13 @@ use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
 /**
- * POST /api/transactions/upload-transaction-image のFeatureテスト
+ * POST /api/transactions/upload-image のFeatureテスト
  */
 class UploadTransactionImageTest extends TestCase
 {
     use RefreshDatabase;
 
-    private const URI = '/api/transactions/upload-transaction-image';
+    private const URI = '/api/transactions/upload-image';
 
     public function test_画像を添付できる(): void
     {
@@ -25,11 +25,11 @@ class UploadTransactionImageTest extends TestCase
         $transaction = Transaction::factory()->for($user)->create();
 
         $response = $this->actingAs($user)->postJson(self::URI, [
-            'transaction_id' => $transaction->id,
+            'transactionId' => $transaction->id,
             'image' => UploadedFile::fake()->image('receipt.jpg'),
         ]);
 
-        $response->assertOk()->assertJsonPath('has_image', true);
+        $response->assertOk()->assertJsonPath('hasImage', true);
 
         $transaction->refresh();
         Storage::disk('local')->assertExists($transaction->image_path);
@@ -42,7 +42,7 @@ class UploadTransactionImageTest extends TestCase
         $transaction = Transaction::factory()->for($user)->create();
 
         $this->actingAs($user)->postJson(self::URI, [
-            'transaction_id' => $transaction->id,
+            'transactionId' => $transaction->id,
             'image' => UploadedFile::fake()->image('receipt.jpg'),
         ])->assertOk();
 
@@ -57,9 +57,9 @@ class UploadTransactionImageTest extends TestCase
         $transaction = Transaction::factory()->for($user)->create();
 
         $this->actingAs($user)->postJson(self::URI, [
-            'transaction_id' => $transaction->id,
+            'transactionId' => $transaction->id,
             'image' => UploadedFile::fake()->image('receipt.jpg'),
-        ])->assertOk()->assertJsonMissingPath('image_path');
+        ])->assertOk()->assertJsonMissingPath('imagePath');
     }
 
     public function test_添付済みの場合は古い画像を削除して差し替える(): void
@@ -70,7 +70,7 @@ class UploadTransactionImageTest extends TestCase
         $transaction = Transaction::factory()->for($user)->create(['image_path' => $oldPath]);
 
         $this->actingAs($user)->postJson(self::URI, [
-            'transaction_id' => $transaction->id,
+            'transactionId' => $transaction->id,
             'image' => UploadedFile::fake()->image('new.jpg'),
         ])->assertOk();
 
@@ -86,7 +86,7 @@ class UploadTransactionImageTest extends TestCase
         $transaction = Transaction::factory()->for($other)->create();
 
         $this->actingAs($user)->postJson(self::URI, [
-            'transaction_id' => $transaction->id,
+            'transactionId' => $transaction->id,
             'image' => UploadedFile::fake()->image('receipt.jpg'),
         ])->assertNotFound();
 
@@ -100,9 +100,9 @@ class UploadTransactionImageTest extends TestCase
         $transaction = Transaction::factory()->for($user)->create();
 
         $this->actingAs($user)->postJson(self::URI, [
-            'transaction_id' => $transaction->id,
+            'transactionId' => $transaction->id,
             'image' => UploadedFile::fake()->create('memo.pdf', 100, 'application/pdf'),
-        ])->assertStatus(422)->assertJsonValidationErrors(['image']);
+        ])->assertStatus(422)->assertJsonStructure(['error' => ['fields' => ['image']]]);
     }
 
     public function test_5_m_bを超える画像は422になる(): void
@@ -112,9 +112,9 @@ class UploadTransactionImageTest extends TestCase
         $transaction = Transaction::factory()->for($user)->create();
 
         $this->actingAs($user)->postJson(self::URI, [
-            'transaction_id' => $transaction->id,
+            'transactionId' => $transaction->id,
             'image' => UploadedFile::fake()->image('big.jpg')->size(5121),
-        ])->assertStatus(422)->assertJsonValidationErrors(['image']);
+        ])->assertStatus(422)->assertJsonStructure(['error' => ['fields' => ['image']]]);
     }
 
     public function test_画像が無いと422になる(): void
@@ -122,9 +122,9 @@ class UploadTransactionImageTest extends TestCase
         $user = User::factory()->create();
         $transaction = Transaction::factory()->for($user)->create();
 
-        $this->actingAs($user)->postJson(self::URI, ['transaction_id' => $transaction->id])
+        $this->actingAs($user)->postJson(self::URI, ['transactionId' => $transaction->id])
             ->assertStatus(422)
-            ->assertJsonValidationErrors(['image']);
+            ->assertJsonStructure(['error' => ['fields' => ['image']]]);
     }
 
     public function test_未ログインでは401になる(): void

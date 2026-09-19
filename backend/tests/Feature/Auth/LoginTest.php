@@ -7,7 +7,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
 /**
- * POST /api/login のFeatureテスト
+ * POST /api/auth/login のFeatureテスト
  */
 class LoginTest extends TestCase
 {
@@ -17,7 +17,7 @@ class LoginTest extends TestCase
     {
         $user = User::factory()->create(['email' => 'taro@example.com']);
 
-        $response = $this->postJson('/api/login', [
+        $response = $this->postJson('/api/auth/login', [
             'email' => 'taro@example.com',
             // UserFactoryの既定パスワード
             'password' => 'password',
@@ -34,7 +34,7 @@ class LoginTest extends TestCase
     {
         User::factory()->create(['email' => 'taro@example.com']);
 
-        $response = $this->postJson('/api/login', [
+        $response = $this->postJson('/api/auth/login', [
             'email' => 'taro@example.com',
             'password' => 'password',
         ]);
@@ -46,37 +46,37 @@ class LoginTest extends TestCase
     {
         User::factory()->create(['email' => 'taro@example.com']);
 
-        $response = $this->postJson('/api/login', [
+        $response = $this->postJson('/api/auth/login', [
             'email' => 'taro@example.com',
             'password' => 'wrong-password',
         ]);
 
         // 認証失敗はemailに紐づくバリデーションエラーとして返す設計
         $response->assertStatus(422)
-            ->assertJsonValidationErrors(['email']);
+            ->assertJsonStructure(['error' => ['fields' => ['email']]]);
 
         $this->assertGuest();
     }
 
     public function test_存在しないメールアドレスでも422になる(): void
     {
-        $response = $this->postJson('/api/login', [
+        $response = $this->postJson('/api/auth/login', [
             'email' => 'nobody@example.com',
             'password' => 'password',
         ]);
 
         // 「登録がない」と「パスワードが違う」を区別せず、同じ扱いにする
         $response->assertStatus(422)
-            ->assertJsonValidationErrors(['email']);
+            ->assertJsonStructure(['error' => ['fields' => ['email']]]);
 
         $this->assertGuest();
     }
 
     public function test_必須項目が欠けていると422になる(): void
     {
-        $response = $this->postJson('/api/login', []);
+        $response = $this->postJson('/api/auth/login', []);
 
         $response->assertStatus(422)
-            ->assertJsonValidationErrors(['email', 'password']);
+            ->assertJsonStructure(['error' => ['fields' => ['email', 'password']]]);
     }
 }

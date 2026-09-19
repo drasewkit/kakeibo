@@ -10,20 +10,20 @@ use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
 /**
- * POST /api/transactions/delete-transaction のFeatureテスト
+ * POST /api/transactions/delete のFeatureテスト
  */
 class DeleteTransactionTest extends TestCase
 {
     use RefreshDatabase;
 
-    private const URI = '/api/transactions/delete-transaction';
+    private const URI = '/api/transactions/delete';
 
     public function test_収支を削除できる(): void
     {
         $user = User::factory()->create();
         $transaction = Transaction::factory()->for($user)->create();
 
-        $response = $this->actingAs($user)->postJson(self::URI, ['transaction_id' => $transaction->id]);
+        $response = $this->actingAs($user)->postJson(self::URI, ['transactionId' => $transaction->id]);
 
         $response->assertNoContent();
         $this->assertDatabaseMissing('transactions', ['id' => $transaction->id]);
@@ -36,7 +36,7 @@ class DeleteTransactionTest extends TestCase
         $path = UploadedFile::fake()->image('receipt.jpg')->store('transaction-images/'.$user->id, 'local');
         $transaction = Transaction::factory()->for($user)->create(['image_path' => $path]);
 
-        $this->actingAs($user)->postJson(self::URI, ['transaction_id' => $transaction->id])
+        $this->actingAs($user)->postJson(self::URI, ['transactionId' => $transaction->id])
             ->assertNoContent();
 
         Storage::disk('local')->assertMissing($path);
@@ -48,7 +48,7 @@ class DeleteTransactionTest extends TestCase
         $other = User::factory()->create();
         $transaction = Transaction::factory()->for($other)->create();
 
-        $this->actingAs($user)->postJson(self::URI, ['transaction_id' => $transaction->id])
+        $this->actingAs($user)->postJson(self::URI, ['transactionId' => $transaction->id])
             ->assertNotFound();
 
         $this->assertDatabaseHas('transactions', ['id' => $transaction->id]);
@@ -58,7 +58,7 @@ class DeleteTransactionTest extends TestCase
     {
         $user = User::factory()->create();
 
-        $this->actingAs($user)->postJson(self::URI, ['transaction_id' => 999999])->assertNotFound();
+        $this->actingAs($user)->postJson(self::URI, ['transactionId' => 999999])->assertNotFound();
     }
 
     public function test_i_dが無いと422になる(): void
@@ -67,7 +67,7 @@ class DeleteTransactionTest extends TestCase
 
         $this->actingAs($user)->postJson(self::URI, [])
             ->assertStatus(422)
-            ->assertJsonValidationErrors(['transaction_id']);
+            ->assertJsonStructure(['error' => ['fields' => ['transactionId']]]);
     }
 
     public function test_未ログインでは401になる(): void
