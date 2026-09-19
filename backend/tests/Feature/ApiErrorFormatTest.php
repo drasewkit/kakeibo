@@ -18,7 +18,7 @@ class ApiErrorFormatTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_バリデーション失敗は422で_validatio_n_faile_dを返す(): void
+    public function test_バリデーション失敗は422でコードを返す(): void
     {
         $user = User::factory()->create();
 
@@ -33,7 +33,7 @@ class ApiErrorFormatTest extends TestCase
         $this->assertIsArray($response->json('error.fields.amount'));
     }
 
-    public function test_未ログインは401で_unauthenticate_dを返す(): void
+    public function test_未ログインは401でコードを返す(): void
     {
         $response = $this->getJson('/api/auth/get-user');
 
@@ -44,7 +44,18 @@ class ApiErrorFormatTest extends TestCase
             ->assertJsonMissingPath('error.fields');
     }
 
-    public function test_他人のレコードは404で_no_t_foun_dを返す(): void
+    public function test_Acceptヘッダが無くても401になる(): void
+    {
+        // ブラウザで直接URLを開いた場合などAcceptがtext/htmlになるケース。
+        // フレームワーク既定のroute('login')へのリダイレクトを無効化していないと、
+        // ミドルウェア内でRouteNotFoundExceptionが出て500になる
+        $response = $this->get('/api/auth/get-user');
+
+        $response->assertStatus(401)
+            ->assertJsonPath('error.code', ApiErrorCode::Unauthenticated->value);
+    }
+
+    public function test_他人のレコードは404でコードを返す(): void
     {
         $user = User::factory()->create();
         $other = User::factory()->create();
@@ -58,7 +69,7 @@ class ApiErrorFormatTest extends TestCase
             ->assertJsonMissingPath('error.fields');
     }
 
-    public function test_存在しないルートも404で_no_t_foun_dを返す(): void
+    public function test_存在しないルートも404でコードを返す(): void
     {
         $response = $this->getJson('/api/no-such-endpoint');
 
@@ -66,7 +77,7 @@ class ApiErrorFormatTest extends TestCase
             ->assertJsonPath('error.code', ApiErrorCode::NotFound->value);
     }
 
-    public function test_laravel既定のmessageとerrorsは返さない(): void
+    public function test_Laravel既定のmessageとerrorsは返さない(): void
     {
         $user = User::factory()->create();
 

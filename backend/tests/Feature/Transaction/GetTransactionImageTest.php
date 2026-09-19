@@ -53,14 +53,14 @@ class GetTransactionImageTest extends TestCase
             ->assertNotFound();
     }
 
-    public function test_存在しない_i_dは404になる(): void
+    public function test_存在しないIDは404になる(): void
     {
         $user = User::factory()->create();
 
         $this->actingAs($user)->getJson(self::URI.'?transactionId=999999')->assertNotFound();
     }
 
-    public function test_i_dが無いと422になる(): void
+    public function test_IDが無いと422になる(): void
     {
         $user = User::factory()->create();
 

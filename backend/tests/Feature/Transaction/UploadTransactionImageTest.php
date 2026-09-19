@@ -105,7 +105,7 @@ class UploadTransactionImageTest extends TestCase
         ])->assertStatus(422)->assertJsonStructure(['error' => ['fields' => ['image']]]);
     }
 
-    public function test_5_m_bを超える画像は422になる(): void
+    public function test_5MBを超える画像は422になる(): void
     {
         Storage::fake('local');
         $user = User::factory()->create();

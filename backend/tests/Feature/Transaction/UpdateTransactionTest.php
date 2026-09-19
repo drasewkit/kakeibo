@@ -51,7 +51,7 @@ class UpdateTransactionTest extends TestCase
         ]);
     }
 
-    public function test_transaction_idはレスポンスの項目として保存されない(): void
+    public function test_更新対象のIDはレスポンスに含まれない(): void
     {
         $user = User::factory()->create();
         $transaction = Transaction::factory()->for($user)->create();
@@ -75,7 +75,7 @@ class UpdateTransactionTest extends TestCase
         $this->assertDatabaseHas('transactions', ['id' => $transaction->id, 'amount' => 1000]);
     }
 
-    public function test_存在しない_i_dは404になる(): void
+    public function test_存在しないIDは404になる(): void
     {
         $user = User::factory()->create();
 
