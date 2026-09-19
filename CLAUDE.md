@@ -4,6 +4,8 @@ Next.js（React）+ Laravel で作る家計簿アプリ。このファイルは�
 
 なお、これからやること・検討中の課題（ロードマップ / TODO）は、各自ローカル管理の `CLAUDE.local.md`（`.gitignore` 対象、Claude Code が自動読み込み）に記録している。作業を始める前にそちらも確認すること。決定して恒久ルール化すべき事項が出たら `CLAUDE.local.md` からこのファイルへ昇格させる。
 
+**注意: このファイルの規約には、既存コードにまだ反映されていないものがある**（2026-09-19に決定したAPI契約まわりが該当）。適用状況と移行手順は `CLAUDE.local.md` を参照すること。
+
 ## 技術スタック
 
 - フロントエンド: Next.js（App Router, TypeScript, React）
@@ -37,6 +39,31 @@ Next.js（React）+ Laravel で作る家計簿アプリ。このファイルは�
 - メソッド内の主要な処理ブロックの前には、処理内容を短く要約したコメントを入れる（例: `// ログインユーザーを取得`, `// カテゴリの種類と収支の種類が一致しているか検証`）
 - フロントエンドのフック・コンポーネントも同様に、何を行っているかをコメントで示す
 - コメントは簡潔に。処理内容の要約に留め、自明なこと（`// idを取得` のような変数名そのままの説明）や長い説明文は避ける
+
+## API境界の命名規則
+
+フロントエンド・バックエンドを横断するルール。
+
+- **APIのリクエスト／レスポンスのJSONキーはすべてcamelCase**（`categoryId`, `hasImage`, `availableYears`）
+- **DBのカラム名はsnake_caseのまま**（`category_id`）。変換はAPIの境界（Laravelは`app/Http/Resources/`とFormRequest、NestJSはDTO / zodスキーマ）で行う
+- フロントエンド側にcamelCase変換層は置かない。APIが返した形をそのまま型として扱う
+- 理由: TypeScript / Prisma / NestJS の標準的な作法がcamelCaseであり、Phase 2で`packages/shared`にzodスキーマを切り出して**型を一元管理する構想と整合させるため**。また確定書のPhase 3は「環境変数でAPI向き先を切替」してLaravelとNestJSを並走させる計画であり、**両者のキーのケースが異なるとフロントが両方に対応できず、この切り替えが成立しない**
+- 再検討条件: なし
+
+## コード整形
+
+- **バックエンド: Laravel Pint**（Laravel既定プリセット）。`./vendor/bin/pint`
+- **フロントエンド: Prettier**。`npm run format`
+- コミット前に対象範囲を整形してから差分を確認する
+- 理由: AIに書かせる量が多く、整形ゆれで差分が汚れるとレビューが成立しなくなるため
+- エディタ側（Neovim / LazyVim + conform.nvim）の設定は**dotfilesリポジトリ**（chezmoi管理）で別途管理する。このリポジトリには含めない
+
+## CI
+
+- GitHub Actions で `develop` への push と `main` へのプルリクエストに対して以下を実行する
+  - フロントエンド: `npm run lint` / `npx tsc --noEmit`
+  - バックエンド: `./vendor/bin/pint --test` / `php artisan test`
+- 理由: バックエンドのFeatureテスト（`backend/CLAUDE.md`参照）は、自動実行されなければPhase 3の移行時に機能しないため
 
 ## その他
 
