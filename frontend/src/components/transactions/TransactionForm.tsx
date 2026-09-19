@@ -20,7 +20,12 @@ import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import dayjs, { Dayjs } from "dayjs";
 import { ChangeEvent, SubmitEvent, useEffect, useMemo, useState } from "react";
 import { getErrorMessage } from "@/lib/errors";
-import type { Category, Transaction, TransactionInput, TransactionType } from "@/lib/types";
+import type {
+  Category,
+  Transaction,
+  TransactionInput,
+  TransactionType,
+} from "@/lib/types";
 import { TransactionImage } from "./TransactionImage";
 
 function today() {
@@ -182,7 +187,11 @@ export function TransactionForm({
               <Typography variant="body2" sx={{ color: "text.secondary" }}>
                 画像（レシート等）
               </Typography>
-              <Stack direction="row" spacing={1.5} sx={{ alignItems: "center" }}>
+              <Stack
+                direction="row"
+                spacing={1.5}
+                sx={{ alignItems: "center" }}
+              >
                 {hasVisibleImage && (
                   <Box sx={{ position: "relative" }}>
                     {imagePreviewUrl ? (

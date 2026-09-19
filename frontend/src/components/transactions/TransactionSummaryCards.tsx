@@ -44,16 +44,8 @@ export function TransactionSummaryCards({
 }) {
   return (
     <Stack direction={{ xs: "column", sm: "row" }} spacing={2} sx={{ mb: 3 }}>
-      <SummaryCard
-        label="収入"
-        amount={summary?.income}
-        color="success.main"
-      />
-      <SummaryCard
-        label="支出"
-        amount={summary?.expense}
-        color="error.main"
-      />
+      <SummaryCard label="収入" amount={summary?.income} color="success.main" />
+      <SummaryCard label="支出" amount={summary?.expense} color="error.main" />
       <SummaryCard
         label="差引"
         amount={summary?.balance}

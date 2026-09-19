@@ -50,11 +50,7 @@ export function LoginPage() {
       }}
     >
       <Paper variant="outlined" sx={{ p: 4, width: "100%" }}>
-        <Typography
-          variant="h5"
-          component="h1"
-          sx={{ fontWeight: 600, mb: 3 }}
-        >
+        <Typography variant="h5" component="h1" sx={{ fontWeight: 600, mb: 3 }}>
           ログイン
         </Typography>
         <Box component="form" onSubmit={handleSubmit} noValidate>

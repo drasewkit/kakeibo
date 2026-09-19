@@ -57,11 +57,7 @@ export function RegisterPage() {
       }}
     >
       <Paper variant="outlined" sx={{ p: 4, width: "100%" }}>
-        <Typography
-          variant="h5"
-          component="h1"
-          sx={{ fontWeight: 600, mb: 3 }}
-        >
+        <Typography variant="h5" component="h1" sx={{ fontWeight: 600, mb: 3 }}>
           新規登録
         </Typography>
         <Box component="form" onSubmit={handleSubmit} noValidate>

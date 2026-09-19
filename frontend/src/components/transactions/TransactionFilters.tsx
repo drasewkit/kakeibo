@@ -34,9 +34,7 @@ export function TransactionFilters({
   const month = filters.month ?? currentMonth;
 
   // 記録のある年 + 現在の年 + 現在選択中の年を選択肢にする（未来の年は除外し、重複除去して降順）
-  const years = Array.from(
-    new Set([...availableYears, currentYear, year]),
-  )
+  const years = Array.from(new Set([...availableYears, currentYear, year]))
     .filter((y) => y <= currentYear)
     .sort((a, b) => b - a);
 
@@ -47,7 +45,10 @@ export function TransactionFilters({
 
   // 前月・翌月へ移動する（年をまたぐ場合も考慮。当月より先へは進めない）
   function stepMonth(delta: number) {
-    const totalMonths = Math.min(year * 12 + (month - 1) + delta, currentKey - 1);
+    const totalMonths = Math.min(
+      year * 12 + (month - 1) + delta,
+      currentKey - 1,
+    );
     onChange({
       ...filters,
       year: Math.floor(totalMonths / 12),
@@ -72,7 +73,11 @@ export function TransactionFilters({
       >
         今月
       </Button>
-      <IconButton size="small" aria-label="前月へ" onClick={() => stepMonth(-1)}>
+      <IconButton
+        size="small"
+        aria-label="前月へ"
+        onClick={() => stepMonth(-1)}
+      >
         <ChevronLeftIcon />
       </IconButton>
       <TextField
@@ -100,7 +105,9 @@ export function TransactionFilters({
         size="small"
         label="月"
         value={month}
-        onChange={(e) => onChange({ ...filters, month: Number(e.target.value) })}
+        onChange={(e) =>
+          onChange({ ...filters, month: Number(e.target.value) })
+        }
         sx={{ minWidth: 90 }}
       >
         {MONTHS.map((month) => (
@@ -128,8 +135,7 @@ export function TransactionFilters({
         value={filters.type ?? ""}
         onChange={(e) => {
           const newType = (e.target.value || undefined) as
-            | TransactionType
-            | undefined;
+            TransactionType | undefined;
           // 種別を切り替えたことで選択中のカテゴリが対象外になる場合はクリアする
           const selectedCategory = categories.find(
             (c) => c.id === filters.category_id,

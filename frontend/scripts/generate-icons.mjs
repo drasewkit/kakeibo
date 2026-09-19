@@ -19,7 +19,10 @@ const targets = [
 
 for (const [src, out, size] of targets) {
   const svg = await readFile(join(root, "assets/icons", src));
-  const png = await sharp(svg, { density: 512 }).resize(size, size).png().toBuffer();
+  const png = await sharp(svg, { density: 512 })
+    .resize(size, size)
+    .png()
+    .toBuffer();
   await writeFile(join(root, out), png);
   console.log(`${out} (${size}x${size})`);
 }

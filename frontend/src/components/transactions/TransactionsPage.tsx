@@ -176,7 +176,9 @@ export function TransactionsPage() {
         <TransactionForm
           categories={categories}
           initialValue={editingTransaction ?? undefined}
-          isSubmitting={createTransaction.isPending || updateTransaction.isPending}
+          isSubmitting={
+            createTransaction.isPending || updateTransaction.isPending
+          }
           error={createTransaction.error ?? updateTransaction.error}
           onCancel={closeForm}
           onSubmit={(input, image) => {

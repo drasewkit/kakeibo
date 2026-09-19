@@ -49,7 +49,9 @@ export function TransactionImage({
   // Stack等のflexコンテナ内に置かれたとき、デフォルトのalign-items: stretchで
   // 横幅いっぱいに引き伸ばされてしまうのを防ぐ（呼び出し側のsxで上書き可能）
   if (!imageUrl) {
-    return <Skeleton variant="rounded" sx={{ alignSelf: "flex-start", ...sx }} />;
+    return (
+      <Skeleton variant="rounded" sx={{ alignSelf: "flex-start", ...sx }} />
+    );
   }
 
   return (

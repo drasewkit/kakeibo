@@ -144,7 +144,11 @@ function TransactionRow({
           {formatAmount(transaction)}円
         </TableCell>
         <TableCell align="right" sx={{ whiteSpace: "nowrap" }}>
-          <Stack direction="row" spacing={0.5} sx={{ justifyContent: "flex-end" }}>
+          <Stack
+            direction="row"
+            spacing={0.5}
+            sx={{ justifyContent: "flex-end" }}
+          >
             <IconButton
               size="small"
               aria-label="編集"
