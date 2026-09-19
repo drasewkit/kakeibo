@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Enums\TransactionType;
 use App\Models\Category;
 use Illuminate\Database\Seeder;
 
@@ -17,12 +18,12 @@ class CategorySeeder extends Seeder
 
         // 支出カテゴリを登録
         foreach ($expenseCategories as $name) {
-            Category::create(['name' => $name, 'type' => 'expense']);
+            Category::create(['name' => $name, 'type' => TransactionType::Expense]);
         }
 
         // 収入カテゴリを登録（「その他」は支出側とtypeで区別されるため重複してよい）
         foreach ($incomeCategories as $name) {
-            Category::create(['name' => $name, 'type' => 'income']);
+            Category::create(['name' => $name, 'type' => TransactionType::Income]);
         }
     }
 }

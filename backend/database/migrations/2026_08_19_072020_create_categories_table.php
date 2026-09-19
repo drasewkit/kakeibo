@@ -1,5 +1,6 @@
 <?php
 
+use App\Enums\TransactionType;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
@@ -15,7 +16,7 @@ return new class extends Migration
         Schema::create('categories', function (Blueprint $table) {
             $table->id();
             $table->string('name')->comment('カテゴリ名');
-            $table->enum('type', ['income', 'expense'])->comment('種別（income: 収入 / expense: 支出）');
+            $table->enum('type', TransactionType::values())->comment('種別（income: 収入 / expense: 支出）');
             $table->timestamps();
         });
     }

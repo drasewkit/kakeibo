@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Enums\TransactionType;
 use App\Models\Category;
 use App\Models\Transaction;
 use App\Models\User;
@@ -20,7 +21,7 @@ class TransactionFactory extends Factory
         return [
             'user_id' => User::factory(),
             'category_id' => Category::factory(),
-            'type' => 'expense',
+            'type' => TransactionType::Expense,
             'amount' => fake()->numberBetween(100, 100000),
             'date' => fake()->date(),
             'memo' => null,
@@ -34,7 +35,7 @@ class TransactionFactory extends Factory
     public function income(): static
     {
         return $this->state(fn (array $attributes) => [
-            'type' => 'income',
+            'type' => TransactionType::Income,
             'category_id' => Category::factory()->income(),
         ]);
     }
@@ -45,7 +46,7 @@ class TransactionFactory extends Factory
     public function expense(): static
     {
         return $this->state(fn (array $attributes) => [
-            'type' => 'expense',
+            'type' => TransactionType::Expense,
             'category_id' => Category::factory()->expense(),
         ]);
     }

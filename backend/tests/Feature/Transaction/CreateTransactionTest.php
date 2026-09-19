@@ -108,6 +108,33 @@ class CreateTransactionTest extends TestCase
             ->assertJsonValidationErrors(['amount']);
     }
 
+    public function test_カテゴリの種類が収支の種類と違うと422になる(): void
+    {
+        $user = User::factory()->create();
+        $incomeCategory = Category::factory()->income()->create();
+
+        // 支出の収支に収入カテゴリを指定する
+        $response = $this->actingAs($user)->postJson(self::URI, $this->validPayload([
+            'type' => 'expense',
+            'category_id' => $incomeCategory->id,
+        ]));
+
+        $response->assertStatus(422)->assertJsonValidationErrors(['category_id']);
+    }
+
+    public function test_カテゴリの種類が一致していれば登録できる(): void
+    {
+        $user = User::factory()->create();
+        $incomeCategory = Category::factory()->income()->create();
+
+        $response = $this->actingAs($user)->postJson(self::URI, $this->validPayload([
+            'type' => 'income',
+            'category_id' => $incomeCategory->id,
+        ]));
+
+        $response->assertStatus(201)->assertJsonPath('type', 'income');
+    }
+
     public function test_種別が不正だと422になる(): void
     {
         $user = User::factory()->create();

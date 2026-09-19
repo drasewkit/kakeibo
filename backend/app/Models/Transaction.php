@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\TransactionType;
 use Database\Factories\TransactionFactory;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -10,6 +11,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /**
  * 収支（1件の収入または支出）
+ *
+ * @property TransactionType $type casts()でenumに変換される
  */
 class Transaction extends Model
 {
@@ -26,6 +29,7 @@ class Transaction extends Model
     protected function casts(): array
     {
         return [
+            'type' => TransactionType::class,
             'amount' => 'integer',
             'date' => 'date',
         ];

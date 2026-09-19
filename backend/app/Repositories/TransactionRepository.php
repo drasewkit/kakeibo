@@ -2,6 +2,7 @@
 
 namespace App\Repositories;
 
+use App\Enums\TransactionType;
 use App\Models\Transaction;
 use App\Repositories\Interfaces\TransactionRepositoryInterface;
 use Illuminate\Database\Eloquent\Builder;
@@ -46,9 +47,10 @@ class TransactionRepository implements TransactionRepositoryInterface
             ->groupBy('type')
             ->pluck('total', 'type');
 
-        $income = (int) ($totalsByType['income'] ?? 0);
-        $expense = (int) ($totalsByType['expense'] ?? 0);
+        $income = (int) ($totalsByType[TransactionType::Income->value] ?? 0);
+        $expense = (int) ($totalsByType[TransactionType::Expense->value] ?? 0);
 
+        // ここのキーはAPIレスポンスの項目名であり、種別の値とは別物なのでリテラルのままにする
         return [
             'income' => $income,
             'expense' => $expense,

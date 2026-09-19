@@ -94,6 +94,21 @@ Laravel既定の`{message, errors}`は使わず、以下の形式に統一する
 - 理由: Phase 3でNestJSの`ExceptionFilter`が再現すべき仕様を明示するため。フレームワーク既定の形に暗黙依存していると、移行時にフロントの`errors.ts`が静かに壊れる
 - 再検討条件: 外部に公開するAPIを出す場合（RFC 9457準拠を検討する）
 
+### 固定値はPHPのenumを単一の定義元にする
+
+- 取りうる値が決まっている項目は`app/Enums/`にbacked enumを定義し、**そこを唯一の定義元にする**
+  （例: `TransactionType`。`income` / `expense`）
+- 文字列リテラルを各所に書かない。マイグレーションの`enum()`列、モデルの`casts()`、
+  FormRequestの`Rule::enum()`、Seeder、Factory、Repositoryはすべてenumを参照する
+- モデルのクラスPHPDocに`@property`でキャスト後の型を書く。書かないとLarastanが
+  DBスキーマ由来の`string`と推論し、enumとの比較を「常にtrue」と誤検出する
+- **enumにキャストした属性を文字列と比較しない。** `$model->type !== 'income'`は常にtrueになる。
+  比較相手も`TransactionType::tryFrom()`等でenumへ揃える
+  （2026-09-19、`CreateTransactionRequest::withValidator()`で実際に踏んだ）
+- 理由: 値の定義が散らばると、追加・変更のたびに全箇所を追う必要があり、漏れても気づけない。
+  Phase 2で`packages/shared`にzodスキーマを切り出す構想の、バックエンド側の対応物にあたる
+- 再検討条件: なし
+
 ### 金額の扱い
 
 - 金額は**円単位の非負整数**（`unsignedInteger`）。小数は持たない
