@@ -94,6 +94,29 @@ Laravel既定の`{message, errors}`は使わず、以下の形式に統一する
 - 理由: Phase 3でNestJSの`ExceptionFilter`が再現すべき仕様を明示するため。フレームワーク既定の形に暗黙依存していると、移行時にフロントの`errors.ts`が静かに壊れる
 - 再検討条件: 外部に公開するAPIを出す場合（RFC 9457準拠を検討する）
 
+### エディタ向けの型情報（laravel-ide-helper）
+
+- `barryvdh/laravel-ide-helper`を開発用依存として入れている。`composer install`後や
+  モデル・マイグレーションを変更したら再生成する
+
+  ```
+  php artisan ide-helper:generate   # ファサードとEloquentのスタブ
+  php artisan ide-helper:models --nowrite   # モデルの@property / @method
+  ```
+
+  `ide-helper:models`はDBのスキーマを読むため、MySQLを起動した状態で実行する
+
+- 理由: `Transaction::create()`のようなEloquentの静的呼び出しは`Model`に実体が無く、
+  `__callStatic`で転送される。LarastanはこれをPHPStan拡張で解決するが、
+  エディタのPHP LSP（Intelephense）はLaravel固有の知識を持たないため
+  「Method "create" does not exist」と誤検出する。
+  生成物の`\Eloquent`スタブを継承させることで解決する
+- **診断を無効化して黙らせない。** 無効化すると`crate`のような本物のタイプミスも
+  検出されなくなる（2026-09-19に実際に発生した）
+- 生成物（`_ide_helper.php` / `_ide_helper_models.php` / `.phpstorm.meta.php`）は
+  `.gitignore`に入れ、`pint.json`の`notName`で整形対象からも外す。
+  `phpstan.neon`の解析対象はapp/config/database/routes/testsなので元から対象外
+
 ### 固定値はPHPのenumを単一の定義元にする
 
 - 取りうる値が決まっている項目は`app/Enums/`にbacked enumを定義し、**そこを唯一の定義元にする**
