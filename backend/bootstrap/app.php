@@ -17,6 +17,13 @@ return Application::configure(basePath: dirname(__DIR__))
         // Sanctumのstatefulミドルウェアを有効化し、フロント(SPA)からのAPIリクエストを
         // Bearerトークンではなくセッションクッキーで認証できるようにする
         $middleware->statefulApi();
+
+        // 未認証時のリダイレクト先を無効化する。
+        // フレームワークの既定は route('login') だが、このアプリはAPIのみで
+        // login名前付きルートを持たないため、Acceptヘッダの無いリクエストが
+        // ミドルウェア内でRouteNotFoundExceptionを投げ500になっていた。
+        // nullを返すとAuthenticationExceptionがそのまま送出され、401として整形される
+        $middleware->redirectGuestsTo(fn () => null);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->shouldRenderJsonWhen(
