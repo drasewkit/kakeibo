@@ -58,11 +58,23 @@ Next.js（React）+ Laravel で作る家計簿アプリ。このファイルは�
 - 理由: AIに書かせる量が多く、整形ゆれで差分が汚れるとレビューが成立しなくなるため
 - エディタ側（Neovim / LazyVim + conform.nvim）の設定は**dotfilesリポジトリ**（chezmoi管理）で別途管理する。このリポジトリには含めない
 
+## 静的解析
+
+- **バックエンド: Larastan（PHPStan）**。`./vendor/bin/phpstan analyse`。設定は`backend/phpstan.neon`
+- **フロントエンド: ESLint**（`npm run lint`）と TypeScript の型検査（`npx tsc --noEmit`）
+- 整形ツールとは役割を分ける。**整形は見た目だけを変え、静的解析はバグになりうる書き方を指摘する**
+- **PHPのlintにphpcsは使わない。** 既定のPEAR標準がPintと衝突するうえ、バグ検出ではなくスタイル検査であるため
+- PHPStanのlevelは5から始め、通るようになったら段階的に上げる
+  - 2026-09-19時点の実測: level 5で0件、6で33件、8で46件、10で61件
+- 理由: PHP側に静的解析が無いと、コントローラ再編のような大規模リファクタで参照の壊れを検出できない。
+  Featureテストは実行されたコードパスしか見ないため、守備範囲が重ならない
+
 ## CI
 
-- GitHub Actions で `develop` への push と `main` へのプルリクエストに対して以下を実行する
-  - フロントエンド: `npm run lint` / `npx tsc --noEmit`
-  - バックエンド: `./vendor/bin/pint --test` / `php artisan test`
+- GitHub Actions（`.github/workflows/ci.yml`）で `develop` への push と `main` へのプルリクエストに対して以下を実行する
+  - フロントエンド: `npm run lint` / `npx tsc --noEmit` / `npm run format:check`
+  - バックエンド: `./vendor/bin/pint --test` / `./vendor/bin/phpstan analyse` / `php artisan test`
+- 実行環境は開発コンテナに揃える（Node 22 / PHP 8.5）
 - 理由: バックエンドのFeatureテスト（`backend/CLAUDE.md`参照）は、自動実行されなければPhase 3の移行時に機能しないため
 
 ## その他

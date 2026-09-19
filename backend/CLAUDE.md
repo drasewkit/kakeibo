@@ -112,6 +112,9 @@ Laravel既定の`{message, errors}`は使わず、以下の形式に統一する
 ### テスト
 
 - **エンドポイントを追加・変更したら必ずFeatureテストを書く**
+- テストは**SQLiteのインメモリDB**で実行する（`phpunit.xml`）。CIにMySQLサービスを立てずに済み、
+  engine非依存のクエリを書く強制力が働く（Phase 4のPostgreSQL移行で効く）。
+  MySQL固有のSQLに依存する実装が必要になった場合はこの前提を見直す
 - 最低限の観点:
   - 正常系のレスポンス形（Resourceが定義した通りのキーが返るか）
   - 未ログイン時に401（`UNAUTHENTICATED`）
