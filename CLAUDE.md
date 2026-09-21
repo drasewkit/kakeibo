@@ -15,6 +15,7 @@ Next.js（React）+ Laravel で作る家計簿アプリ。このファイルは�
   - 将来スマホアプリ化する場合もCapacitor等でのWebViewラップを想定しており、React Native化は現状予定していない（MUIはReact Native非対応のため、方針転換時は別途検討）
 - バックエンド: Laravel（PHP）, MySQL
 - 開発環境: Docker Compose（frontend / backend / mysql の3コンテナ、`docker-compose.yml`はルート）
+  - **定型コマンドはルートの`Makefile`に集約する**（`make help`で一覧）。起動・停止・マイグレーション・整形・検証などは`docker compose ...`を直接書かず、対応するターゲットを使う／無ければ追加する。READMEの「よく使うコマンド」もMakefileを案内する形にしてある
   - `frontend`サービスは`node_modules`をbind mount（`./frontend:/app`）でホストと共有しており、匿名ボリュームによる隔離は行わない。`frontend/entrypoint.sh`がコンテナ起動のたびに`npm install`を実行してから`npm run dev`するため、`package.json`さえ変更されていれば`docker compose up`（コンテナ再起動）するだけでホスト側`frontend/node_modules`にも自動的に反映される。
   - パッケージの追加・更新はホスト側で`npm install <package>`を実行してもよいし、コンテナを再起動するだけでも（entrypointが自動で`npm install`するため）反映される。どちらの方法でも同じディレクトリに書き込まれるため、明示的な同期手順（別途`npm install`し直す等）は不要。
   - 以前は`node_modules`を匿名ボリュームで隔離していたため、ホストとコンテナのnode_modulesが乖離し、ホストの`tsc`やエディタのTS Language Serverが「モジュールが見つかりません」というエラーを出す不具合が実際に発生していた（MUI導入時）。原因調査の上でこの設計に変更し、解消済み。
