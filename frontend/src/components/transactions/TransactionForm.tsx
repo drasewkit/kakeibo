@@ -235,7 +235,6 @@ export function TransactionForm({
                   <input
                     type="file"
                     accept="image/*"
-                    capture="environment"
                     hidden
                     onChange={handleImageChange}
                   />
