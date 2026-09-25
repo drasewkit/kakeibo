@@ -1,0 +1,11 @@
+{
+    "preset": "laravel",
+    "notName": [
+        "_ide_helper.php",
+        "_ide_helper_models.php",
+        ".phpstorm.meta.php"
+    ],
+    "rules": {
+        "php_unit_method_casing": false
+    }
+}

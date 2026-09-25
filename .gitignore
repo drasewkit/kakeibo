@@ -1,3 +1,9 @@
 .DS_Store
 *.log
 .claude/
+
+# 個人用のロードマップ / TODO（各自ローカル管理）
+CLAUDE.local.md
+
+# 本番サーバ上でのみ作成する環境変数ファイル
+.env

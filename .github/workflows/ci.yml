@@ -1,0 +1,105 @@
+name: CI
+
+# CLAUDE.mdの「CI」方針に対応。developへのpushと、mainへのプルリクエストで検証する
+on:
+  push:
+    branches: [develop]
+  pull_request:
+    branches: [main]
+
+jobs:
+  frontend:
+    name: フロントエンド（lint / 型 / 整形）
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+
+      # docker-compose.ymlのfrontendはnode:22-alpineのため揃える
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - run: npm ci
+
+      - name: ESLint
+        run: npm run lint
+
+      # Next.jsが.next/types/に生成するルート型（LayoutProps等）はリポジトリに含まれない。
+      # 生成しないとtscがCannot find name 'LayoutProps'で落ちる
+      - name: ルート型の生成
+        run: npx next typegen
+
+      - name: 型検査
+        run: npx tsc --noEmit
+
+      - name: Prettier（整形済みかの確認のみ）
+        run: npm run format:check
+
+  backend:
+    name: バックエンド（整形 / 静的解析 / テスト）
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+
+    # テストは本番と同じMySQLで実行する（SQLiteとはEXTRACTの有無やenumの並び順が異なるため）
+    services:
+      mysql:
+        image: mysql:8.4
+        env:
+          MYSQL_ROOT_PASSWORD: password
+          MYSQL_DATABASE: testing
+          MYSQL_USER: sail
+          MYSQL_PASSWORD: password
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -ppassword"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
+
+    env:
+      DB_HOST: 127.0.0.1
+      DB_PORT: 3306
+      DB_DATABASE: testing
+      DB_USERNAME: sail
+      DB_PASSWORD: password
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # docker-compose.ymlのbackendはSail runtime 8.5のため揃える
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.5'
+          extensions: mbstring, pdo_mysql
+          coverage: none
+
+      - name: Composerのキャッシュ
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/composer/files
+          key: composer-${{ hashFiles('backend/composer.lock') }}
+          restore-keys: composer-
+
+      - run: composer install --prefer-dist --no-interaction --no-progress
+
+      - name: .envの用意
+        run: |
+          cp .env.example .env
+          php artisan key:generate
+
+      - name: Laravel Pint（整形済みかの確認のみ）
+        run: ./vendor/bin/pint --test
+
+      - name: PHPStan / Larastan
+        run: ./vendor/bin/phpstan analyse --no-progress --memory-limit=1G
+
+      - name: テスト
+        run: php artisan test

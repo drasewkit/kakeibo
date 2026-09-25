@@ -15,11 +15,15 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // User::factory(10)->create();
+        $this->call(CategorySeeder::class);
 
-        User::factory()->create([
-            'name' => 'Test User',
-            'email' => 'test@example.com',
-        ]);
+        // fakerphp/fakerは開発用依存のため、本番イメージ（composer --no-dev）には入っていない。
+        // 本番でdb:seedしてもカテゴリだけが投入されるようにする
+        if (! app()->environment('production')) {
+            User::factory()->create([
+                'name' => 'Test User',
+                'email' => 'test@example.com',
+            ]);
+        }
     }
 }

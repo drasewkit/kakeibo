@@ -1,77 +1,76 @@
 services:
-    frontend:
-        build:
-            context: ./frontend
-            dockerfile: Dockerfile
-        ports:
-            - '3000:3000'
-        environment:
-            NEXT_PUBLIC_API_URL: 'http://localhost:8000'
-            WATCHPACK_POLLING: 'true'
-        volumes:
-            - './frontend:/app'
-            - /app/node_modules
-            - /app/.next
-        depends_on:
-            - backend
-        networks:
-            - kakeibo
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      NEXT_PUBLIC_API_URL: "http://localhost:8000"
+      WATCHPACK_POLLING: "true"
+    volumes:
+      - "./frontend:/app"
+      - /app/.next
+    depends_on:
+      - backend
+    networks:
+      - kakeibo
 
-    backend:
-        build:
-            context: './backend/vendor/laravel/sail/runtimes/8.5'
-            dockerfile: Dockerfile
-            args:
-                WWWGROUP: '${WWWGROUP:-1000}'
-        image: 'sail-8.5/app'
-        extra_hosts:
-            - 'host.docker.internal:host-gateway'
-        ports:
-            - '${APP_PORT:-8000}:80'
-            - '${VITE_PORT:-5173}:${VITE_PORT:-5173}'
-        env_file:
-            - ./backend/.env
-        environment:
-            WWWUSER: '${WWWUSER:-1000}'
-            LARAVEL_SAIL: 1
-            XDEBUG_MODE: '${SAIL_XDEBUG_MODE:-off}'
-            XDEBUG_CONFIG: '${SAIL_XDEBUG_CONFIG:-client_host=host.docker.internal}'
-        volumes:
-            - './backend:/var/www/html'
-        networks:
-            - kakeibo
-        depends_on:
-            - mysql
+  backend:
+    build:
+      context: "./backend/vendor/laravel/sail/runtimes/8.5"
+      dockerfile: Dockerfile
+      args:
+        WWWGROUP: "${WWWGROUP:-1000}"
+    image: "sail-8.5/app"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    ports:
+      - "${APP_PORT:-8000}:80"
+      - "${VITE_PORT:-5173}:${VITE_PORT:-5173}"
+    env_file:
+      - ./backend/.env
+    environment:
+      WWWUSER: "${WWWUSER:-1000}"
+      LARAVEL_SAIL: 1
+      XDEBUG_MODE: "${SAIL_XDEBUG_MODE:-off}"
+      XDEBUG_CONFIG: "${SAIL_XDEBUG_CONFIG:-client_host=host.docker.internal}"
+    volumes:
+      - "./backend:/var/www/html"
+    networks:
+      - kakeibo
+    depends_on:
+      - mysql
 
-    mysql:
-        image: 'mysql:8.4'
-        ports:
-            - '${FORWARD_DB_PORT:-3306}:3306'
-        environment:
-            MYSQL_ROOT_PASSWORD: 'password'
-            MYSQL_ROOT_HOST: '%'
-            MYSQL_DATABASE: 'kakeibo'
-            MYSQL_USER: 'sail'
-            MYSQL_PASSWORD: 'password'
-            MYSQL_ALLOW_EMPTY_PASSWORD: 1
-        volumes:
-            - 'kakeibo-mysql:/var/lib/mysql'
-            - './backend/vendor/laravel/sail/database/mysql/create-testing-database.sh:/docker-entrypoint-initdb.d/10-create-testing-database.sh'
-        networks:
-            - kakeibo
-        healthcheck:
-            test:
-                - CMD
-                - mysqladmin
-                - ping
-                - '-ppassword'
-            retries: 3
-            timeout: 5s
+  mysql:
+    image: "mysql:8.4"
+    ports:
+      - "${FORWARD_DB_PORT:-3306}:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: "password"
+      MYSQL_ROOT_HOST: "%"
+      MYSQL_DATABASE: "kakeibo"
+      MYSQL_USER: "sail"
+      MYSQL_PASSWORD: "password"
+      MYSQL_ALLOW_EMPTY_PASSWORD: 1
+    volumes:
+      - "kakeibo-mysql:/var/lib/mysql"
+      - "./backend/vendor/laravel/sail/database/mysql/create-testing-database.sh:/docker-entrypoint-initdb.d/10-create-testing-database.sh"
+    networks:
+      - kakeibo
+    healthcheck:
+      test:
+        - CMD
+        - mysqladmin
+        - ping
+        - "-ppassword"
+      retries: 3
+      timeout: 5s
 
 networks:
-    kakeibo:
-        driver: bridge
+  kakeibo:
+    driver: bridge
 
 volumes:
-    kakeibo-mysql:
-        driver: local
+  kakeibo-mysql:
+    driver: local

@@ -1,0 +1,25 @@
+# vendorはcomposerステージで解決したものを使う。ホスト側のものは開発用パッケージを含み
+# プラットフォームも異なるため、絶対に持ち込まない
+vendor
+node_modules
+
+.env
+.env.*
+!.env.production.example
+
+.git
+.github
+storage/logs/*
+storage/framework/cache/*
+storage/framework/sessions/*
+storage/framework/views/*
+bootstrap/cache/*
+
+tests
+phpunit.xml
+phpstan.neon
+pint.json
+_ide_helper.php
+_ide_helper_models.php
+.phpstorm.meta.php
+.phpunit.result.cache

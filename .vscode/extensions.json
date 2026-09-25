@@ -1,0 +1,22 @@
+{
+    "recommendations": [
+        // フロントエンド (Next.js / React / TypeScript / Tailwind CSS)
+        "dbaeumer.vscode-eslint",
+        "esbenp.prettier-vscode",
+        "bradlc.vscode-tailwindcss",
+
+        // バックエンド (Laravel / PHP)
+        "bmewburn.vscode-intelephense-client",
+        "onecentlin.laravel-blade",
+        "ryannaddy.laravel-artisan",
+        "amiralizadeh9480.laravel-extra-intellisense",
+        "xdebug.php-debug",
+
+        // Docker
+        "ms-azuretools.vscode-docker",
+
+        // 共通
+        "editorconfig.editorconfig",
+        "eamodio.gitlens"
+    ]
+}
