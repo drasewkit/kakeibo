@@ -156,6 +156,13 @@ Laravel既定の`{message, errors}`は使わず、以下の形式に統一する
   - `DB_HOST`は環境側で与える。コンテナ内は`mysql`、ホストとCIは`127.0.0.1`
     （ホストから実行する場合は`DB_HOST=127.0.0.1 php artisan test`）
   - 再検討条件: Phase 4でPostgreSQLへ移行したら、そちらに合わせる
+- **テストは必ずテスト用DB（`testing`）で実行する。** `tests/TestCase.php`が接続先を確認し、`testing`以外なら`RefreshDatabase`の前に例外で止める
+  - 開発用`docker-compose.yml`のbackendに**`env_file`を戻さない**。`.env`の値がコンテナの環境変数になると、
+    `phpunit.xml`の`<env>`（`force`なし）は既存の環境変数を上書きしないため、テスト用の設定がすべて無効になる
+  - 2026-09-27に実際に発生した。`make test`が開発用DB`kakeibo`を`RefreshDatabase`で作り直し、開発データが消えた。
+    同時に`APP_ENV`・`SESSION_DRIVER`・`SANCTUM_STATEFUL_DOMAINS`も開発用の値のままで、ローカルでのみ2件失敗していた
+  - `.env`はマウント経由でLaravelが自分で読み込むため、`env_file`が無くても開発時の動作は変わらない
+    （本番用`docker-compose.prod.yml`はイメージに`.env`を含めないため`env_file`が必要。こちらはテストを実行しない）
 
 ### SQLはengine非依存に書く
 
