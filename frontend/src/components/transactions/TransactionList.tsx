@@ -2,11 +2,16 @@ import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutlined";
 import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
 import ImageOutlinedIcon from "@mui/icons-material/ImageOutlined";
+import MoreVertIcon from "@mui/icons-material/MoreVert";
 import Box from "@mui/material/Box";
 import Card from "@mui/material/Card";
 import Chip from "@mui/material/Chip";
 import Collapse from "@mui/material/Collapse";
 import IconButton from "@mui/material/IconButton";
+import ListItemIcon from "@mui/material/ListItemIcon";
+import ListItemText from "@mui/material/ListItemText";
+import Menu from "@mui/material/Menu";
+import MenuItem from "@mui/material/MenuItem";
 import Stack from "@mui/material/Stack";
 import Table from "@mui/material/Table";
 import TableBody from "@mui/material/TableBody";
@@ -28,15 +33,116 @@ const PAGE_SIZE = 500;
 const COLUMN_COUNT = 4;
 
 // 日付ごとに分かれたテーブル同士で列幅が揃うよう、共通のcolgroupとして定義する。
-// 日付は見出し（例: 21日（金））で表すため、行側には日付列を持たない
-const COLUMN_WIDTHS = ["30%", "40%", "20%", "10%"];
+// 日付は見出し（例: 21日（金））で表すため、行側には日付列を持たない。
+// スマホ幅では割合指定だと金額・操作列が潰れるため、金額と操作は固定幅にしてメモ列に残りを割り当てる
+const COLUMN_WIDTHS = [
+  { xs: "25%", sm: "30%" },
+  { xs: "auto", sm: "40%" },
+  { xs: "7rem", sm: "20%" },
+  { xs: "2.75rem", sm: "10%" },
+];
 function ColumnWidths() {
   return (
     <colgroup>
       {COLUMN_WIDTHS.map((width, index) => (
-        <col key={index} style={{ width }} />
+        <Box key={index} component="col" sx={{ width }} />
       ))}
     </colgroup>
+  );
+}
+
+// スマホ幅ではセルの左右余白を詰める（既定の16pxだと4列分で本文幅の3分の1を占める）
+const TABLE_SX = {
+  tableLayout: "fixed",
+  "& .MuiTableCell-root": { px: { xs: 1, sm: 2 } },
+} as const;
+
+// 収支1件分の編集・削除操作。PCではボタンを並べ、スマホ幅では︙メニューにまとめる
+function TransactionRowActions({
+  transaction,
+  onEdit,
+  onDelete,
+}: {
+  transaction: Transaction;
+  onEdit: (transaction: Transaction) => void;
+  onDelete: (transaction: Transaction) => void;
+}) {
+  const [menuAnchor, setMenuAnchor] = useState<HTMLElement | null>(null);
+
+  // メニューを閉じてから操作を実行する
+  const handleMenuSelect = (action: (transaction: Transaction) => void) => {
+    setMenuAnchor(null);
+    action(transaction);
+  };
+
+  return (
+    <>
+      <Stack
+        direction="row"
+        spacing={0.5}
+        sx={{ justifyContent: "flex-end", display: { xs: "none", sm: "flex" } }}
+      >
+        <IconButton
+          size="small"
+          aria-label="編集"
+          onClick={(event) => {
+            event.stopPropagation();
+            onEdit(transaction);
+          }}
+        >
+          <EditOutlinedIcon fontSize="small" />
+        </IconButton>
+        <IconButton
+          size="small"
+          color="error"
+          aria-label="削除"
+          onClick={(event) => {
+            event.stopPropagation();
+            onDelete(transaction);
+          }}
+        >
+          <DeleteOutlineIcon fontSize="small" />
+        </IconButton>
+      </Stack>
+
+      <IconButton
+        size="small"
+        aria-label="操作"
+        aria-haspopup="menu"
+        sx={{ display: { xs: "inline-flex", sm: "none" } }}
+        onClick={(event) => {
+          event.stopPropagation();
+          setMenuAnchor(event.currentTarget);
+        }}
+      >
+        <MoreVertIcon fontSize="small" />
+      </IconButton>
+      {/* ポータル内のクリックもReact上は行へ伝播し、行の展開が切り替わってしまうため止める */}
+      <Menu
+        anchorEl={menuAnchor}
+        open={menuAnchor !== null}
+        onClose={() => setMenuAnchor(null)}
+        onClick={(event) => event.stopPropagation()}
+        anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+        transformOrigin={{ vertical: "top", horizontal: "right" }}
+      >
+        <MenuItem onClick={() => handleMenuSelect(onEdit)}>
+          <ListItemIcon>
+            <EditOutlinedIcon fontSize="small" />
+          </ListItemIcon>
+          <ListItemText>編集</ListItemText>
+        </MenuItem>
+        <MenuItem
+          onClick={() => handleMenuSelect(onDelete)}
+          sx={{ color: "error.main" }}
+        >
+          <ListItemIcon sx={{ color: "inherit" }}>
+            <DeleteOutlineIcon fontSize="small" />
+          </ListItemIcon>
+          <ListItemText>削除</ListItemText>
+        </MenuItem>
+      </Menu>
+    </>
   );
 }
 
@@ -144,33 +250,11 @@ function TransactionRow({
           {formatAmount(transaction)}円
         </TableCell>
         <TableCell align="right" sx={{ whiteSpace: "nowrap" }}>
-          <Stack
-            direction="row"
-            spacing={0.5}
-            sx={{ justifyContent: "flex-end" }}
-          >
-            <IconButton
-              size="small"
-              aria-label="編集"
-              onClick={(event) => {
-                event.stopPropagation();
-                onEdit(transaction);
-              }}
-            >
-              <EditOutlinedIcon fontSize="small" />
-            </IconButton>
-            <IconButton
-              size="small"
-              color="error"
-              aria-label="削除"
-              onClick={(event) => {
-                event.stopPropagation();
-                onDelete(transaction);
-              }}
-            >
-              <DeleteOutlineIcon fontSize="small" />
-            </IconButton>
-          </Stack>
+          <TransactionRowActions
+            transaction={transaction}
+            onEdit={onEdit}
+            onDelete={onDelete}
+          />
         </TableCell>
       </TableRow>
       {isExpandable && (
@@ -237,7 +321,7 @@ export function TransactionList({
       {/* 列見出しのみのカード。日付ごとのカードには繰り返さない */}
       <Card variant="outlined">
         <TableContainer>
-          <Table size="small" sx={{ tableLayout: "fixed" }}>
+          <Table size="small" sx={TABLE_SX}>
             <ColumnWidths />
             <TableHead>
               <TableRow>
@@ -257,7 +341,7 @@ export function TransactionList({
             {formatDayHeading(group.date)}
           </Typography>
           <TableContainer>
-            <Table size="small" sx={{ tableLayout: "fixed" }}>
+            <Table size="small" sx={TABLE_SX}>
               <ColumnWidths />
               <TableBody>
                 {group.transactions.map((transaction) => (

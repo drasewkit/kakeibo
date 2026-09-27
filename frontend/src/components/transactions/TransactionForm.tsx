@@ -28,8 +28,9 @@ import type {
 } from "@/lib/types";
 import { TransactionImage } from "./TransactionImage";
 
+// 端末のローカル時刻での今日の日付。toISOString()はUTCのため、日本時間の0〜9時に前日になる
 function today() {
-  return new Date().toISOString().slice(0, 10);
+  return dayjs().format("YYYY-MM-DD");
 }
 
 const IMAGE_PREVIEW_SX = { width: 120, height: 120, borderRadius: 1 };
