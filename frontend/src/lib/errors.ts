@@ -34,6 +34,11 @@ export function getErrorMessage(error: unknown): string {
     return apiError.message;
   }
 
+  // nginxが本文サイズ超過で断った場合はアプリのエラー形式ではない（HTMLが返る）ため、ステータスで判定する
+  if (error instanceof AxiosError && error.response?.status === 413) {
+    return "ファイルが大きすぎます。";
+  }
+
   return "エラーが発生しました。もう一度お試しください。";
 }
 

@@ -200,6 +200,7 @@ return [
         'email' => 'メールアドレス',
         'password' => 'パスワード',
         'password_confirmation' => 'パスワード（確認）',
+        'image' => '画像',
     ],
 
 ];

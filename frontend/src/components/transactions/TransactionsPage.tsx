@@ -26,6 +26,7 @@ import {
 import type {
   Transaction,
   TransactionFilters as Filters,
+  TransactionInput,
   TransactionSummary,
 } from "@/lib/types";
 import { TransactionFilters } from "./TransactionFilters";
@@ -97,6 +98,47 @@ export function TransactionsPage() {
 
   function closeForm() {
     setEditingTransaction(undefined);
+    // 前回の画像反映エラーが次に開いたフォームに残らないよう消す
+    uploadTransactionImage.reset();
+    deleteTransactionImage.reset();
+  }
+
+  // 収支を保存し、画像に変更があれば続けて反映する。
+  // 画像はundefined: 変更なし, null: 削除, File: 新規添付/差し替え
+  async function handleFormSubmit(
+    input: TransactionInput,
+    image: File | null | undefined,
+  ) {
+    uploadTransactionImage.reset();
+    deleteTransactionImage.reset();
+
+    // 収支を保存する。失敗時のエラーはフォームがmutationのerrorから表示する
+    let saved: Transaction;
+    try {
+      saved = editingTransaction
+        ? await updateTransaction.mutateAsync({
+            id: editingTransaction.id,
+            input,
+          })
+        : await createTransaction.mutateAsync(input);
+    } catch {
+      return;
+    }
+
+    // 保存できた収支のIDで画像を反映する。
+    // 失敗したら収支は保存済みのため、フォームを閉じずにその収支の編集へ切り替える（再保存での二重登録を防ぐ）
+    try {
+      if (image === null) {
+        await deleteTransactionImage.mutateAsync(saved.id);
+      } else if (image) {
+        await uploadTransactionImage.mutateAsync({ id: saved.id, image });
+      }
+    } catch {
+      setEditingTransaction(saved);
+      return;
+    }
+
+    closeForm();
   }
 
   // 年月が変わる操作の場合、前後どちらへ移動したかを見てスライド方向を決める。
@@ -177,41 +219,17 @@ export function TransactionsPage() {
           categories={categories}
           initialValue={editingTransaction ?? undefined}
           isSubmitting={
-            createTransaction.isPending || updateTransaction.isPending
+            createTransaction.isPending ||
+            updateTransaction.isPending ||
+            uploadTransactionImage.isPending ||
+            deleteTransactionImage.isPending
           }
           error={createTransaction.error ?? updateTransaction.error}
+          imageError={
+            uploadTransactionImage.error ?? deleteTransactionImage.error
+          }
           onCancel={closeForm}
-          onSubmit={(input, image) => {
-            // 画像に変更がある場合、収支の保存が成功した後にそのIDを使って反映する
-            // （undefined: 変更なし, null: 削除, File: 新規添付/差し替え）
-            function applyImageChange(transaction: Transaction) {
-              if (image === undefined) return;
-              if (image === null) {
-                deleteTransactionImage.mutate(transaction.id);
-              } else {
-                uploadTransactionImage.mutate({ id: transaction.id, image });
-              }
-            }
-
-            if (editingTransaction) {
-              updateTransaction.mutate(
-                { id: editingTransaction.id, input },
-                {
-                  onSuccess: (transaction) => {
-                    applyImageChange(transaction);
-                    closeForm();
-                  },
-                },
-              );
-            } else {
-              createTransaction.mutate(input, {
-                onSuccess: (transaction) => {
-                  applyImageChange(transaction);
-                  closeForm();
-                },
-              });
-            }
-          }}
+          onSubmit={handleFormSubmit}
         />
       )}
 

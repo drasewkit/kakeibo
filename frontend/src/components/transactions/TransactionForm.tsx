@@ -20,6 +20,7 @@ import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import dayjs, { Dayjs } from "dayjs";
 import { ChangeEvent, SubmitEvent, useEffect, useMemo, useState } from "react";
 import { getErrorMessage } from "@/lib/errors";
+import { MAX_IMAGE_BYTES, shrinkImage } from "@/lib/image";
 import type {
   Category,
   Transaction,
@@ -37,12 +38,14 @@ const IMAGE_PREVIEW_SX = { width: 120, height: 120, borderRadius: 1 };
 
 // 収支の登録・編集フォーム（ダイアログ形式の共通コンポーネント）。
 // initialValueがあれば編集、なければ新規登録として扱う（呼び出し側で判定）。
-// 画像はimageパラメータで意図を伝える: undefined=変更なし, null=削除, File=新規添付/差し替え
+// 画像はimageパラメータで意図を伝える: undefined=変更なし, null=削除, File=新規添付/差し替え。
+// imageErrorは収支の保存後に画像の反映だけが失敗した場合のエラー
 export function TransactionForm({
   categories,
   initialValue,
   isSubmitting,
   error,
+  imageError,
   onSubmit,
   onCancel,
 }: {
@@ -50,6 +53,7 @@ export function TransactionForm({
   initialValue?: Transaction;
   isSubmitting: boolean;
   error?: unknown;
+  imageError?: unknown;
   onSubmit: (input: TransactionInput, image?: File | null) => void;
   onCancel: () => void;
 }) {
@@ -66,6 +70,8 @@ export function TransactionForm({
   const [memo, setMemo] = useState(initialValue?.memo ?? "");
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imageRemoved, setImageRemoved] = useState(false);
+  const [isProcessingImage, setIsProcessingImage] = useState(false);
+  const [imageSizeError, setImageSizeError] = useState(false);
 
   // 選択中の収支種別（収入/支出）に対応するカテゴリのみ選択肢に出す
   const filteredCategories = categories.filter((c) => c.type === type);
@@ -85,11 +91,26 @@ export function TransactionForm({
     };
   }, [imagePreviewUrl]);
 
-  function handleImageChange(event: ChangeEvent<HTMLInputElement>) {
+  // 選択した画像を縮小してから保持する。縮小後も上限を超える場合は送信させずにエラーを出す
+  async function handleImageChange(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
+    // 同じファイルを選び直しても change が発火するよう、選択状態を空に戻す
+    event.target.value = "";
     if (!file) return;
-    setImageFile(file);
-    setImageRemoved(false);
+
+    setIsProcessingImage(true);
+    setImageSizeError(false);
+    try {
+      const shrunk = await shrinkImage(file);
+      if (shrunk.size > MAX_IMAGE_BYTES) {
+        setImageSizeError(true);
+        return;
+      }
+      setImageFile(shrunk);
+      setImageRemoved(false);
+    } finally {
+      setIsProcessingImage(false);
+    }
   }
 
   function handleImageRemove() {
@@ -232,20 +253,35 @@ export function TransactionForm({
                   size="small"
                   startIcon={<AddPhotoAlternateOutlinedIcon />}
                 >
-                  {hasVisibleImage ? "画像を変更" : "画像を選択"}
+                  {isProcessingImage
+                    ? "画像を処理中..."
+                    : hasVisibleImage
+                      ? "画像を変更"
+                      : "画像を選択"}
                   <input
                     type="file"
                     accept="image/*"
                     hidden
+                    disabled={isProcessingImage}
                     onChange={handleImageChange}
                   />
                 </Button>
               </Stack>
+              {imageSizeError && (
+                <Typography variant="body2" sx={{ color: "error.main" }}>
+                  画像は5MB以下にしてください。
+                </Typography>
+              )}
             </Stack>
 
             {Boolean(error) && (
               <Alert severity="error" sx={{ whiteSpace: "pre-line" }}>
                 {getErrorMessage(error)}
+              </Alert>
+            )}
+            {Boolean(imageError) && (
+              <Alert severity="error" sx={{ whiteSpace: "pre-line" }}>
+                {`収支は保存しましたが、画像を反映できませんでした。\n${getErrorMessage(imageError)}`}
               </Alert>
             )}
           </Stack>
@@ -254,7 +290,11 @@ export function TransactionForm({
           <Button onClick={onCancel} color="inherit">
             キャンセル
           </Button>
-          <Button type="submit" variant="contained" disabled={isSubmitting}>
+          <Button
+            type="submit"
+            variant="contained"
+            disabled={isSubmitting || isProcessingImage}
+          >
             {isSubmitting ? "保存中..." : "保存"}
           </Button>
         </DialogActions>
