@@ -28,8 +28,8 @@ services:
     ports:
       - "${APP_PORT:-8000}:80"
       - "${VITE_PORT:-5173}:${VITE_PORT:-5173}"
-    env_file:
-      - ./backend/.env
+    # backend/.env はマウント経由で Laravel 自身が読み込む。env_file でコンテナの環境変数にすると
+    # phpunit.xml の <env> が効かなくなり、テストが開発用DBを作り直してしまうため使わない
     environment:
       WWWUSER: "${WWWUSER:-1000}"
       LARAVEL_SAIL: 1
