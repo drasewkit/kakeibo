@@ -25,7 +25,9 @@ class GetUserTest extends TestCase
         $response->assertOk()
             ->assertJsonPath('id', $user->id)
             ->assertJsonPath('name', '高久 大祐')
-            ->assertJsonPath('email', 'taro@example.com');
+            ->assertJsonPath('email', 'taro@example.com')
+            ->assertJsonPath('hasAvatar', false)
+            ->assertJsonPath('avatarVersion', null);
     }
 
     public function test_パスワードはレスポンスに含まれない(): void
@@ -35,7 +37,9 @@ class GetUserTest extends TestCase
         $response = $this->actingAs($user)->getJson('/api/auth/get-user');
 
         $response->assertJsonMissingPath('password')
-            ->assertJsonMissingPath('remember_token');
+            ->assertJsonMissingPath('remember_token')
+            ->assertJsonMissingPath('avatar_path')
+            ->assertJsonMissingPath('avatarPath');
     }
 
     public function test_他人の情報は返らない(): void

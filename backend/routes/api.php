@@ -3,6 +3,7 @@
 use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\Category\CategoryController;
 use App\Http\Controllers\Transaction\TransactionController;
+use App\Http\Controllers\User\UserController;
 use Illuminate\Support\Facades\Route;
 
 // URIは /{リソース複数形}/{操作名} 。操作名にリソース名は繰り返さない（backend/CLAUDE.md参照）
@@ -27,4 +28,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/transactions/get-image', [TransactionController::class, 'getImage']);
     Route::post('/transactions/upload-image', [TransactionController::class, 'uploadImage']);
     Route::post('/transactions/delete-image', [TransactionController::class, 'deleteImage']);
+
+    Route::get('/users/get-avatar', [UserController::class, 'getAvatar']);
+    Route::post('/users/upload-avatar', [UserController::class, 'uploadAvatar']);
+    Route::post('/users/delete-avatar', [UserController::class, 'deleteAvatar']);
 });

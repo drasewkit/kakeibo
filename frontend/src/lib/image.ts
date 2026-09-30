@@ -5,9 +5,12 @@ export const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
 const MAX_LONG_EDGE = 2048;
 const JPEG_QUALITY = 0.85;
 
-// アップロード前に画像を縮小して JPEG に変換する。
+// アップロード前に画像を縮小して JPEG に変換する（長辺の上限は用途に応じて指定できる）。
 // 既に十分小さい画像や、ブラウザが読み込めない形式（Android の HEIC 等）はそのまま返す
-export async function shrinkImage(file: File): Promise<File> {
+export async function shrinkImage(
+  file: File,
+  maxLongEdge: number = MAX_LONG_EDGE,
+): Promise<File> {
   const url = URL.createObjectURL(file);
   try {
     // 画像を読み込む。EXIF の向きはブラウザが既定で反映する
@@ -17,7 +20,7 @@ export async function shrinkImage(file: File): Promise<File> {
 
     const scale = Math.min(
       1,
-      MAX_LONG_EDGE / Math.max(img.naturalWidth, img.naturalHeight),
+      maxLongEdge / Math.max(img.naturalWidth, img.naturalHeight),
     );
     if (scale === 1 && file.size <= MAX_IMAGE_BYTES) {
       return file;

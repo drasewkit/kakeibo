@@ -4,6 +4,10 @@ export type User = {
   id: number;
   name: string;
   email: string;
+  // プロフィール画像が登録されているかどうか。画像データは/users/get-avatarで別途取得する
+  hasAvatar: boolean;
+  // 画像を差し替えるたびに変わる値（未登録時はnull）。取得結果のキャッシュキーに使う
+  avatarVersion: string | null;
 };
 
 export type Category = {

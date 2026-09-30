@@ -9,7 +9,7 @@ Next.js（React）+ Laravel で作る家計簿アプリ。
 | `frontend/` | Next.js（App Router, TypeScript, MUI v9, TanStack Query, axios） |
 | `backend/` | Laravel 13 / PHP 8.5 / MySQL 8.4。認証は Sanctum の SPAクッキー認証 |
 | `docker-compose.yml` | 開発環境（frontend / backend / mysql の3コンテナ） |
-| `docker-compose.prod.yml` | 本番環境（AWS EC2 + Cloudflare Tunnel。nginx を加えた4コンテナ） |
+| `docker-compose.prod.yml` | 本番環境（AWS EC2 + Cloudflare Tunnel）。構築・リリース手順は [`docs/deploy.md`](./docs/deploy.md) |
 | `Makefile` | 開発用の定型コマンド。`make help` で一覧を表示する |
 
 開発・実装上の規約は [`CLAUDE.md`](./CLAUDE.md) にまとめてある。
