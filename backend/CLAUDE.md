@@ -49,6 +49,9 @@
 | GET | `/transactions/get-image` | `TransactionController::getImage()` |
 | POST | `/transactions/upload-image` | `TransactionController::uploadImage()` |
 | POST | `/transactions/delete-image` | `TransactionController::deleteImage()` |
+| GET | `/users/get-avatar` | `UserController::getAvatar()` |
+| POST | `/users/upload-avatar` | `UserController::uploadAvatar()` |
+| POST | `/users/delete-avatar` | `UserController::deleteAvatar()` |
 - 再検討条件: 外部に公開するAPIを出す場合
 
 ### コントローラの粒度（Laravel実装における規約）
