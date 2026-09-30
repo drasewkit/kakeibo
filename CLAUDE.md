@@ -4,8 +4,6 @@ Next.js（React）+ Laravel で作る家計簿アプリ。このファイルは�
 
 なお、これからやること・検討中の課題（ロードマップ / TODO）は、各自ローカル管理の `CLAUDE.local.md`（`.gitignore` 対象、Claude Code が自動読み込み）に記録している。作業を始める前にそちらも確認すること。決定して恒久ルール化すべき事項が出たら `CLAUDE.local.md` からこのファイルへ昇格させる。
 
-**注意: このファイルの規約には、既存コードにまだ反映されていないものがある**（2026-09-19に決定したAPI契約まわりが該当）。適用状況と移行手順は `CLAUDE.local.md` を参照すること。
-
 ## 技術スタック
 
 - フロントエンド: Next.js（App Router, TypeScript, React）
@@ -46,9 +44,9 @@ Next.js（React）+ Laravel で作る家計簿アプリ。このファイルは�
 フロントエンド・バックエンドを横断するルール。
 
 - **APIのリクエスト／レスポンスのJSONキーはすべてcamelCase**（`categoryId`, `hasImage`, `availableYears`）
-- **DBのカラム名はsnake_caseのまま**（`category_id`）。変換はAPIの境界（Laravelは`app/Http/Resources/`とFormRequest、NestJSはDTO / zodスキーマ）で行う
+- **DBのカラム名はsnake_caseのまま**（`category_id`）。変換はAPIの境界（`app/Http/Resources/`とFormRequest）で行う
 - フロントエンド側にcamelCase変換層は置かない。APIが返した形をそのまま型として扱う
-- 理由: TypeScript / Prisma / NestJS の標準的な作法がcamelCaseであり、Phase 2で`packages/shared`にzodスキーマを切り出して**型を一元管理する構想と整合させるため**。また確定書のPhase 3は「環境変数でAPI向き先を切替」してLaravelとNestJSを並走させる計画であり、**両者のキーのケースが異なるとフロントが両方に対応できず、この切り替えが成立しない**
+- 理由: フロントエンド（TypeScript / JavaScript）の標準的な作法がcamelCaseであり、APIが返した形をそのまま型として使えるようにするため。境界で一度だけ変換すれば、フロント全体でケースが混在しない
 - 再検討条件: なし
 
 ## コード整形
@@ -76,7 +74,7 @@ Next.js（React）+ Laravel で作る家計簿アプリ。このファイルは�
   - フロントエンド: `npm run lint` / `npx tsc --noEmit` / `npm run format:check`
   - バックエンド: `./vendor/bin/pint --test` / `./vendor/bin/phpstan analyse` / `php artisan test`
 - 実行環境は開発コンテナに揃える（Node 22 / PHP 8.5）
-- 理由: バックエンドのFeatureテスト（`backend/CLAUDE.md`参照）は、自動実行されなければPhase 3の移行時に機能しないため
+- 理由: Featureテスト（`backend/CLAUDE.md`参照）は、自動で実行されなければ回帰に気づけず、リファクタの安全網として機能しないため
 
 ## その他
 

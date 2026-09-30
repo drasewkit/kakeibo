@@ -16,7 +16,7 @@
 - Eloquentモデルを`response()->json()`で直接返さない。必ず`app/Http/Resources/{Feature}/`のResourceを通す
 - モデルの`$hidden` / `$appends`でAPI出力を制御しない
 - ページネーションを返す場合も独自のResourceで形を定義する（Laravelのページネータが吐く`current_page`等をそのまま露出させない）
-- 理由: モデルにカラムを追加したときに既定で公開されてしまう構造を避ける。「隠すものを列挙する」ではなく「公開するものだけ書く」に反転させるため。加えて、Phase 3のNestJS移行時にResourceがそのままレスポンス仕様書として機能する
+- 理由: モデルにカラムを追加したときに既定で公開されてしまう構造を避ける。「隠すものを列挙する」ではなく「公開するものだけ書く」に反転させるため
 - 再検討条件: なし（層が増えるコストより、情報が漏れる構造のリスクを重く見る）
 
 ### URI規約（フレームワーク非依存の恒久ルール）
@@ -49,7 +49,6 @@
 | GET | `/transactions/get-image` | `TransactionController::getImage()` |
 | POST | `/transactions/upload-image` | `TransactionController::uploadImage()` |
 | POST | `/transactions/delete-image` | `TransactionController::deleteImage()` |
-- **Phase 3のNestJS移行後も同じURIを維持する。** フロントの`api-client.ts` / hooksを変更せずにバックエンドを差し替えられる状態を保つため
 - 再検討条件: 外部に公開するAPIを出す場合
 
 ### コントローラの粒度（Laravel実装における規約）
@@ -59,7 +58,7 @@
   - メソッド名はURIの末尾セグメントをキャメルケースにしたものと一致させる（`/transactions/get-list` → `getList()`）
   - FormRequestは操作ごとに分ける（`app/Http/Requests/{Feature}/`）
 - 単一アクションコントローラ（`__invoke()`のみ）は使わない。`Route::apiResource()`も使わない（上のURI規約と両立しないため）
-- 理由: NestJSは1コントローラに複数ハンドラを持たせるのが標準であり、移行時の構造差を小さくできる
+- 理由: 1操作1クラスではファイル数が操作の数だけ増え、同じリソースの処理が散らばって見通しが悪くなるため（2026-09-19に13本→3本へ再編）
 - **これは実装構造の規約であり、上のURI規約とは独立している。** URIを変えずにこちらだけを変更してよい
 
 ### 認可
@@ -91,7 +90,7 @@ Laravel既定の`{message, errors}`は使わず、以下の形式に統一する
 
 - `message`は利用者にそのまま表示できる日本語
 - `fields`は`VALIDATION_FAILED`のときのみ含める。キーはリクエストのフィールド名（camelCase）
-- 理由: Phase 3でNestJSの`ExceptionFilter`が再現すべき仕様を明示するため。フレームワーク既定の形に暗黙依存していると、移行時にフロントの`errors.ts`が静かに壊れる
+- 理由: フロントの`errors.ts`が依存する形を明示し、テスト（`ApiErrorFormatTest`）で固定するため。フレームワーク既定の形に暗黙依存していると、Laravelの更新や例外の種類の違いで形が変わったとき、フロントが静かに壊れる
 - 再検討条件: 外部に公開するAPIを出す場合（RFC 9457準拠を検討する）
 
 ### エディタ向けの型情報（laravel-ide-helper）
@@ -128,8 +127,7 @@ Laravel既定の`{message, errors}`は使わず、以下の形式に統一する
 - **enumにキャストした属性を文字列と比較しない。** `$model->type !== 'income'`は常にtrueになる。
   比較相手も`TransactionType::tryFrom()`等でenumへ揃える
   （2026-09-19、`CreateTransactionRequest::withValidator()`で実際に踏んだ）
-- 理由: 値の定義が散らばると、追加・変更のたびに全箇所を追う必要があり、漏れても気づけない。
-  Phase 2で`packages/shared`にzodスキーマを切り出す構想の、バックエンド側の対応物にあたる
+- 理由: 値の定義が散らばると、追加・変更のたびに全箇所を追う必要があり、漏れても気づけない
 - 再検討条件: なし
 
 ### 金額の扱い
@@ -155,7 +153,7 @@ Laravel既定の`{message, errors}`は使わず、以下の形式に統一する
     （`YEAR()`が動かない / `enum`列の`ORDER BY`の結果が逆になる）
   - `DB_HOST`は環境側で与える。コンテナ内は`mysql`、ホストとCIは`127.0.0.1`
     （ホストから実行する場合は`DB_HOST=127.0.0.1 php artisan test`）
-  - 再検討条件: Phase 4でPostgreSQLへ移行したら、そちらに合わせる
+  - 再検討条件: 本番のDBを変更する場合
 - **テストは必ずテスト用DB（`testing`）で実行する。** `tests/TestCase.php`が接続先を確認し、`testing`以外なら`RefreshDatabase`の前に例外で止める
   - 開発用`docker-compose.yml`のbackendに**`env_file`を戻さない**。`.env`の値がコンテナの環境変数になると、
     `phpunit.xml`の`<env>`（`force`なし）は既存の環境変数を上書きしないため、テスト用の設定がすべて無効になる
@@ -163,25 +161,22 @@ Laravel既定の`{message, errors}`は使わず、以下の形式に統一する
     同時に`APP_ENV`・`SESSION_DRIVER`・`SANCTUM_STATEFUL_DOMAINS`も開発用の値のままで、ローカルでのみ2件失敗していた
   - `.env`はマウント経由でLaravelが自分で読み込むため、`env_file`が無くても開発時の動作は変わらない
     （本番用`docker-compose.prod.yml`はイメージに`.env`を含めないため`env_file`が必要。こちらはテストを実行しない）
-
-### SQLはengine非依存に書く
-
-- **特定のDBだけの関数・構文を使わない。** Phase 4でMySQLからPostgreSQLへ移行する計画があり、
-  移行時に黙って壊れる、あるいは黙って挙動が変わる箇所を残さない
-- 実例（いずれも2026-09-19に修正済み）:
-  - 年の抽出に`YEAR()`（MySQL専用）ではなく`EXTRACT(YEAR FROM ...)`（標準SQL）を使う。
-    列は`transactions.date`のように修飾する（PostgreSQLでは修飾のない`date`が型名と解釈されうる）
-  - `enum`列を`ORDER BY`にそのまま渡さない。MySQLは定義順、PostgreSQLは文字列比較で並ぶため
-    結果が変わる。意図した順序は標準SQLの`CASE`で明示する
-- 生SQL（`selectRaw` / `orderByRaw`等）を足すときは、MySQLとPostgreSQLの双方で成立するか確認する
-- 再検討条件: なし
 - 最低限の観点:
   - 正常系のレスポンス形（Resourceが定義した通りのキーが返るか）
   - 未ログイン時に401（`UNAUTHENTICATED`）
   - 他人のレコードへのアクセスが404（`NOT_FOUND`）
   - バリデーション失敗が422（`VALIDATION_FAILED`）で`fields`を含む
-- 理由: 現状APIの仕様書がフロントの手書き`types.ts`しかなく、実レスポンスとの乖離を検知できない。**Phase 3のNestJS移行では、このテストが移行前後の挙動の同一性を保証する唯一の手段になる**
+- 理由: 現状APIの仕様書がフロントの手書き`types.ts`しかなく、実レスポンスとの乖離を検知できない。コントローラ再編のようなリファクタや機能追加（世帯の導入など）で、認可やレスポンスの形が壊れていないことを保証する安全網になる
 - 再検討条件: なし
+
+### 生SQLの扱い
+
+- DBは**MySQL 8.4 を前提とする**（開発・本番・テストで同じ）。PostgreSQL への移行計画は2026-09-30に取り下げた
+- 生SQL（`selectRaw` / `orderByRaw` 等）を足すときは、**その結果をFeatureテストで押さえる**。
+  テストも本番と同じMySQLで動くため、テストが通れば本番でも成立する
+- `enum`列の`ORDER BY`は、並び順を`CASE`で明示する。MySQLの定義順に暗黙依存すると、
+  enumの定義を並べ替えたとき黙って順序が変わるため
+- 再検討条件: 本番のDBを変更する場合
 
 ## マイグレーションの規約
 
