@@ -42,6 +42,7 @@ class CreateTransactionTest extends TestCase
             ->assertJsonPath('memo', 'スーパー');
 
         $this->assertDatabaseHas('transactions', [
+            'household_id' => $user->household_id,
             'user_id' => $user->id,
             'amount' => 1280,
             'memo' => 'スーパー',
@@ -59,6 +60,23 @@ class CreateTransactionTest extends TestCase
         ]));
 
         $response->assertStatus(201)->assertJsonPath('userId', $user->id);
+    }
+
+    public function test_ログインユーザーの世帯の収支として登録される(): void
+    {
+        $user = User::factory()->create();
+        $other = User::factory()->create();
+
+        // householdIdを指定しても無視され、ログインユーザーの世帯のものになる
+        $response = $this->actingAs($user)->postJson(self::URI, $this->validPayload([
+            'householdId' => $other->household_id,
+        ]));
+
+        $response->assertStatus(201);
+        $this->assertDatabaseHas('transactions', [
+            'id' => $response->json('id'),
+            'household_id' => $user->household_id,
+        ]);
     }
 
     public function test_カテゴリなしでも登録できる(): void

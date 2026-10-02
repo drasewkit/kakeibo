@@ -22,8 +22,8 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 /**
  * 収支（一覧・詳細・登録・更新・削除と、添付画像の取得・登録・削除）
  *
- * 所有権のチェックはService/Repositoryがuser_idでスコープして行う。
- * 他人のIDを指定した場合は存在しない場合と区別せず404になる。
+ * 所有権のチェックはService/Repositoryがログインユーザーの世帯（household_id）でスコープして行う。
+ * 別の世帯の収支のIDを指定した場合は、存在しない場合と区別せず404になる。
  */
 class TransactionController extends Controller
 {
@@ -34,7 +34,7 @@ class TransactionController extends Controller
     public function getList(GetTransactionListRequest $request): JsonResponse
     {
         // 年月・種別・カテゴリで絞り込んでページネーション取得する
-        $result = $this->transactionService->getList($request->user()->id, $request->toFilters());
+        $result = $this->transactionService->getList($request->user(), $request->toFilters());
 
         return TransactionListResource::make(
             $result['paginator'],
@@ -46,7 +46,7 @@ class TransactionController extends Controller
     public function getDetail(GetTransactionDetailRequest $request): JsonResponse
     {
         $transaction = $this->transactionService->getDetail(
-            $request->user()->id,
+            $request->user(),
             $request->validated('transactionId'),
         );
 
@@ -55,8 +55,8 @@ class TransactionController extends Controller
 
     public function create(CreateTransactionRequest $request): JsonResponse
     {
-        // ログインユーザー自身の収支として登録する
-        $transaction = $this->transactionService->create($request->user()->id, $request->toAttributes());
+        // ログインユーザーの世帯の収支として、ログインユーザーを記帳者にして登録する
+        $transaction = $this->transactionService->create($request->user(), $request->toAttributes());
 
         return TransactionResource::make($transaction)->response()->setStatusCode(201);
     }
@@ -65,7 +65,7 @@ class TransactionController extends Controller
     {
         // toAttributes()は更新対象のIDを含まないため、そのまま更新内容として渡せる
         $transaction = $this->transactionService->update(
-            $request->user()->id,
+            $request->user(),
             $request->validated('transactionId'),
             $request->toAttributes(),
         );
@@ -75,7 +75,7 @@ class TransactionController extends Controller
 
     public function delete(DeleteTransactionRequest $request): Response
     {
-        $this->transactionService->delete($request->user()->id, $request->validated('transactionId'));
+        $this->transactionService->delete($request->user(), $request->validated('transactionId'));
 
         return response()->noContent();
     }
@@ -84,7 +84,7 @@ class TransactionController extends Controller
     {
         // 画像が添付されていない場合も、存在しない場合と区別せず404になる
         $path = $this->transactionService->getImagePath(
-            $request->user()->id,
+            $request->user(),
             $request->validated('transactionId'),
         );
 
@@ -94,7 +94,7 @@ class TransactionController extends Controller
     public function uploadImage(UploadTransactionImageRequest $request): JsonResponse
     {
         $transaction = $this->transactionService->uploadImage(
-            $request->user()->id,
+            $request->user(),
             $request->validated('transactionId'),
             $request->file('image'),
         );
@@ -105,7 +105,7 @@ class TransactionController extends Controller
     public function deleteImage(DeleteTransactionImageRequest $request): JsonResponse
     {
         $transaction = $this->transactionService->deleteImage(
-            $request->user()->id,
+            $request->user(),
             $request->validated('transactionId'),
         );
 

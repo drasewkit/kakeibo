@@ -62,7 +62,7 @@ class UpdateTransactionTest extends TestCase
         $response->assertOk()->assertJsonMissingPath('transactionId');
     }
 
-    public function test_他人の収支は404になる(): void
+    public function test_別の世帯の収支は404になる(): void
     {
         $user = User::factory()->create();
         $other = User::factory()->create();
@@ -71,7 +71,7 @@ class UpdateTransactionTest extends TestCase
         $this->actingAs($user)->postJson(self::URI, $this->validPayload($transaction->id))
             ->assertNotFound();
 
-        // 他人のレコードが書き換わっていないこと
+        // 別の世帯のレコードが書き換わっていないこと
         $this->assertDatabaseHas('transactions', ['id' => $transaction->id, 'amount' => 1000]);
     }
 
