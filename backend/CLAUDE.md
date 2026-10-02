@@ -31,27 +31,6 @@
 - 理由: ルーティングの見通しの良さとIDのバリデーション一元化を重視して決定した。
   操作名からリソース名を除くのは、旧「1コントローラ1アクション・URI末尾＝コントローラー名」規約の
   名残で冗長になっていたため（2026-09-19に見直し）
-
-エンドポイント一覧:
-
-| メソッド | URI | コントローラーのメソッド |
-|---|---|---|
-| POST | `/auth/register` | `AuthController::register()` |
-| POST | `/auth/login` | `AuthController::login()` |
-| POST | `/auth/logout` | `AuthController::logout()` |
-| GET | `/auth/get-user` | `AuthController::getUser()` |
-| GET | `/categories/get-list` | `CategoryController::getList()` |
-| GET | `/transactions/get-list` | `TransactionController::getList()` |
-| GET | `/transactions/get-detail` | `TransactionController::getDetail()` |
-| POST | `/transactions/create` | `TransactionController::create()` |
-| POST | `/transactions/update` | `TransactionController::update()` |
-| POST | `/transactions/delete` | `TransactionController::delete()` |
-| GET | `/transactions/get-image` | `TransactionController::getImage()` |
-| POST | `/transactions/upload-image` | `TransactionController::uploadImage()` |
-| POST | `/transactions/delete-image` | `TransactionController::deleteImage()` |
-| GET | `/users/get-avatar` | `UserController::getAvatar()` |
-| POST | `/users/upload-avatar` | `UserController::uploadAvatar()` |
-| POST | `/users/delete-avatar` | `UserController::deleteAvatar()` |
 - 再検討条件: 外部に公開するAPIを出す場合
 
 ### コントローラの粒度（Laravel実装における規約）
