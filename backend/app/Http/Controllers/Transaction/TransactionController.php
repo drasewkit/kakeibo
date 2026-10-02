@@ -55,8 +55,8 @@ class TransactionController extends Controller
 
     public function create(CreateTransactionRequest $request): JsonResponse
     {
-        // ログインユーザー自身の収支として登録する
-        $transaction = $this->transactionService->create($request->user()->id, $request->toAttributes());
+        // ログインユーザーの世帯の収支として、ログインユーザーを記帳者にして登録する
+        $transaction = $this->transactionService->create($request->user(), $request->toAttributes());
 
         return TransactionResource::make($transaction)->response()->setStatusCode(201);
     }

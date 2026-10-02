@@ -20,6 +20,8 @@ class TransactionFactory extends Factory
     {
         return [
             'user_id' => User::factory(),
+            // 記帳したユーザーの世帯の収支にする（for($user)で記帳者を指定した場合も同じ）
+            'household_id' => fn (array $attributes) => User::query()->findOrFail($attributes['user_id'])->household_id,
             'category_id' => Category::factory(),
             'type' => TransactionType::Expense,
             'amount' => fake()->numberBetween(100, 100000),

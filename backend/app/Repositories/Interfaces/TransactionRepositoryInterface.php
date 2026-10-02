@@ -22,7 +22,8 @@ interface TransactionRepositoryInterface
     // user_idでスコープして1件取得（他人のレコードは取得できない）
     public function findForUser(int $userId, int $transactionId): ?Transaction;
 
-    public function create(int $userId, array $data): Transaction;
+    // 世帯の収支として、記帳したユーザーとともに登録する
+    public function create(int $householdId, int $userId, array $data): Transaction;
 
     public function update(Transaction $transaction, array $data): Transaction;
 

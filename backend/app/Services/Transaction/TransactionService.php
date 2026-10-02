@@ -3,6 +3,7 @@
 namespace App\Services\Transaction;
 
 use App\Models\Transaction;
+use App\Models\User;
 use App\Repositories\Interfaces\TransactionRepositoryInterface;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\UploadedFile;
@@ -40,11 +41,11 @@ class TransactionService
     }
 
     /**
-     * 収支を新規登録する
+     * ログインユーザーの世帯の収支として、ログインユーザーを記帳者にして新規登録する
      */
-    public function create(int $userId, array $data): Transaction
+    public function create(User $user, array $data): Transaction
     {
-        return $this->transactionRepository->create($userId, $data);
+        return $this->transactionRepository->create($user->household_id, $user->id, $data);
     }
 
     /**

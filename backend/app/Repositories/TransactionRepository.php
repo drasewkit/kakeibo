@@ -96,9 +96,9 @@ class TransactionRepository implements TransactionRepositoryInterface
             ->find($transactionId);
     }
 
-    public function create(int $userId, array $data): Transaction
+    public function create(int $householdId, int $userId, array $data): Transaction
     {
-        $transaction = Transaction::create([...$data, 'user_id' => $userId]);
+        $transaction = Transaction::create([...$data, 'household_id' => $householdId, 'user_id' => $userId]);
 
         return $transaction->load('category');
     }
