@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\Storage;
  * ユーザーのプロフィール画像に関するビジネスロジック
  *
  * 登録・削除はログインユーザー自身の画像だけを対象にする（他人の画像は変更できない）。
+ * 取得は同じ世帯のメンバーの画像までできる（収支一覧で記帳者を表示するため）。
  */
 class UserService
 {
@@ -35,12 +36,12 @@ class UserService
     }
 
     /**
-     * 閲覧できるユーザーのプロフィール画像のパスを返す
+     * 同じ世帯のメンバー（自分を含む）のプロフィール画像のパスを返す
      */
-    public function getAvatarPath(int $viewerId, int $userId): string
+    public function getAvatarPath(User $viewer, int $userId): string
     {
-        // 閲覧できないユーザー・画像が未登録の場合は、区別せず404にする
-        $user = $this->userRepository->findVisibleTo($viewerId, $userId);
+        // 別の世帯のユーザー・画像が未登録の場合は、区別せず404にする
+        $user = $this->userRepository->findInHousehold($viewer->household_id, $userId);
 
         if (! $user?->avatar_path) {
             throw new ModelNotFoundException('Avatar not found.');

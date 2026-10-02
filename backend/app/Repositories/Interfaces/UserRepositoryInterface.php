@@ -13,5 +13,6 @@ interface UserRepositoryInterface
 
     public function update(User $user, array $data): User;
 
-    public function findVisibleTo(int $viewerId, int $userId): ?User;
+    // household_idでスコープして1件取得（別の世帯のユーザーは取得できない）
+    public function findInHousehold(int $householdId, int $userId): ?User;
 }

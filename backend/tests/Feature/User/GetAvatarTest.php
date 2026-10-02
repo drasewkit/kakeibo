@@ -37,9 +37,23 @@ class GetAvatarTest extends TestCase
         $this->actingAs($user)->getJson(self::URI."?userId={$user->id}")->assertNotFound();
     }
 
-    public function test_他人のプロフィール画像は404になる(): void
+    public function test_同じ世帯のメンバーのプロフィール画像を取得できる(): void
     {
-        // 世帯を導入するまでは、自分以外の画像は見られない
+        // 収支一覧で記帳者を表示するため、同じ世帯のメンバーの画像は見られる
+        Storage::fake('local');
+        $user = User::factory()->create();
+        $partner = User::factory()->for($user->household)->create();
+        $path = UploadedFile::fake()->image('partner.jpg')->store('avatars/'.$partner->id, 'local');
+        $partner->update(['avatar_path' => $path]);
+
+        $response = $this->actingAs($user)->get(self::URI."?userId={$partner->id}");
+
+        $response->assertOk();
+        $this->assertNotEmpty($response->streamedContent());
+    }
+
+    public function test_別の世帯のユーザーのプロフィール画像は404になる(): void
+    {
         Storage::fake('local');
         $user = User::factory()->create();
         $other = User::factory()->create();
