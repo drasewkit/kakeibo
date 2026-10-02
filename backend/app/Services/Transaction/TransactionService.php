@@ -11,6 +11,8 @@ use Illuminate\Support\Facades\Storage;
 
 /**
  * 収支（Transaction）に関するビジネスロジック
+ *
+ * 収支は世帯が所有する。ログインユーザーが扱えるのは、自分の世帯の収支（世帯の他のメンバーが記帳したものを含む）。
  */
 class TransactionService
 {
@@ -19,25 +21,25 @@ class TransactionService
     ) {}
 
     /**
-     * ログインユーザー自身の収支一覧を取得する（年月・種別・カテゴリで絞り込み可）。
+     * ログインユーザーの世帯の収支一覧を取得する（年月・種別・カテゴリで絞り込み可）。
      * あわせて対象期間の収入・支出・差引の集計値と、年セレクター用の登録済み年一覧も返す
      */
-    public function getList(int $userId, array $filters): array
+    public function getList(User $user, array $filters): array
     {
         // レスポンスの形はResourceが決めるため、ここでは3つの値を素のまま返す
         return [
-            'paginator' => $this->transactionRepository->paginateForUser($userId, $filters),
-            'summary' => $this->transactionRepository->summarizeForUser($userId, $filters),
-            'availableYears' => $this->transactionRepository->getAvailableYearsForUser($userId),
+            'paginator' => $this->transactionRepository->paginateForHousehold($user->household_id, $filters),
+            'summary' => $this->transactionRepository->summarizeForHousehold($user->household_id, $filters),
+            'availableYears' => $this->transactionRepository->getAvailableYearsForHousehold($user->household_id),
         ];
     }
 
     /**
-     * ログインユーザー自身の収支を1件取得する
+     * ログインユーザーの世帯の収支を1件取得する
      */
-    public function getDetail(int $userId, int $transactionId): Transaction
+    public function getDetail(User $user, int $transactionId): Transaction
     {
-        return $this->findOrFail($userId, $transactionId);
+        return $this->findOrFail($user, $transactionId);
     }
 
     /**
@@ -49,21 +51,21 @@ class TransactionService
     }
 
     /**
-     * ログインユーザー自身の収支を更新する
+     * ログインユーザーの世帯の収支を更新する（記帳者は変えない）
      */
-    public function update(int $userId, int $transactionId, array $data): Transaction
+    public function update(User $user, int $transactionId, array $data): Transaction
     {
-        $transaction = $this->findOrFail($userId, $transactionId);
+        $transaction = $this->findOrFail($user, $transactionId);
 
         return $this->transactionRepository->update($transaction, $data);
     }
 
     /**
-     * ログインユーザー自身の収支を削除する。添付画像があればストレージからも削除する
+     * ログインユーザーの世帯の収支を削除する。添付画像があればストレージからも削除する
      */
-    public function delete(int $userId, int $transactionId): void
+    public function delete(User $user, int $transactionId): void
     {
-        $transaction = $this->findOrFail($userId, $transactionId);
+        $transaction = $this->findOrFail($user, $transactionId);
 
         if ($transaction->image_path) {
             Storage::disk('local')->delete($transaction->image_path);
@@ -75,16 +77,16 @@ class TransactionService
     /**
      * 収支に画像を添付する。既に添付済みの場合は古い画像をストレージから削除して差し替える
      */
-    public function uploadImage(int $userId, int $transactionId, UploadedFile $image): Transaction
+    public function uploadImage(User $user, int $transactionId, UploadedFile $image): Transaction
     {
-        $transaction = $this->findOrFail($userId, $transactionId);
+        $transaction = $this->findOrFail($user, $transactionId);
 
         if ($transaction->image_path) {
             Storage::disk('local')->delete($transaction->image_path);
         }
 
-        // 他人のuser_idを推測してもアクセスできないよう、ユーザーごとのディレクトリに保存する
-        $path = $image->store("transaction-images/{$userId}", 'local');
+        // 世帯ごとのディレクトリに保存する（取得時の認可はパスではなく収支の所有で判定する）
+        $path = $image->store("transaction-images/{$transaction->household_id}", 'local');
 
         return $this->transactionRepository->update($transaction, ['image_path' => $path]);
     }
@@ -93,9 +95,9 @@ class TransactionService
      * 収支に添付された画像のストレージ上のパスを取得する。
      * 画像が添付されていない場合も存在しない場合と区別せず404として扱う
      */
-    public function getImagePath(int $userId, int $transactionId): string
+    public function getImagePath(User $user, int $transactionId): string
     {
-        $transaction = $this->findOrFail($userId, $transactionId);
+        $transaction = $this->findOrFail($user, $transactionId);
 
         if (! $transaction->image_path) {
             throw new ModelNotFoundException('Transaction image not found.');
@@ -107,9 +109,9 @@ class TransactionService
     /**
      * 収支に添付された画像を削除する（収支自体は削除しない）
      */
-    public function deleteImage(int $userId, int $transactionId): Transaction
+    public function deleteImage(User $user, int $transactionId): Transaction
     {
-        $transaction = $this->findOrFail($userId, $transactionId);
+        $transaction = $this->findOrFail($user, $transactionId);
 
         if ($transaction->image_path) {
             Storage::disk('local')->delete($transaction->image_path);
@@ -119,12 +121,12 @@ class TransactionService
     }
 
     /**
-     * user_idでスコープした上で収支を取得する。
-     * 存在しない場合と他人の収支だった場合を区別せず404として扱う（所有権の有無を漏らさないため）
+     * ログインユーザーの世帯でスコープした上で収支を取得する。
+     * 存在しない場合と別の世帯の収支だった場合を区別せず404として扱う（所有権の有無を漏らさないため）
      */
-    private function findOrFail(int $userId, int $transactionId): Transaction
+    private function findOrFail(User $user, int $transactionId): Transaction
     {
-        $transaction = $this->transactionRepository->findForUser($userId, $transactionId);
+        $transaction = $this->transactionRepository->findForHousehold($user->household_id, $transactionId);
 
         if (! $transaction) {
             throw new ModelNotFoundException('Transaction not found.');

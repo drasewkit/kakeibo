@@ -13,11 +13,11 @@ use Illuminate\Pagination\LengthAwarePaginator;
  */
 class TransactionRepository implements TransactionRepositoryInterface
 {
-    public function paginateForUser(int $userId, array $filters, int $perPage = 500): LengthAwarePaginator
+    public function paginateForHousehold(int $householdId, array $filters, int $perPage = 500): LengthAwarePaginator
     {
-        // 常にuser_idでスコープし、他人の収支が混ざらないようにする
+        // 常にhousehold_idでスコープし、別の世帯の収支が混ざらないようにする
         $query = Transaction::query()
-            ->where('user_id', $userId)
+            ->where('household_id', $householdId)
             ->with('category');
 
         $this->applyDateRangeFilter($query, $filters);
@@ -35,10 +35,10 @@ class TransactionRepository implements TransactionRepositoryInterface
         return $query->orderByDesc('date')->orderByDesc('id')->paginate($perPage);
     }
 
-    public function summarizeForUser(int $userId, array $filters): array
+    public function summarizeForHousehold(int $householdId, array $filters): array
     {
         // 一覧の絞り込み（種別・カテゴリ）には関係なく、対象期間全体の収入・支出を集計する
-        $query = Transaction::query()->where('user_id', $userId);
+        $query = Transaction::query()->where('household_id', $householdId);
 
         $this->applyDateRangeFilter($query, $filters);
 
@@ -58,16 +58,12 @@ class TransactionRepository implements TransactionRepositoryInterface
         ];
     }
 
-    public function getAvailableYearsForUser(int $userId): array
+    public function getAvailableYearsForHousehold(int $householdId): array
     {
         // 年セレクターの選択肢用に、収支が存在する年だけを重複なく降順で返す。
-        //
-        // 年の抽出にMySQL固有のYEAR()は使わない。EXTRACTは標準SQLでMySQLとPostgreSQLの
-        // どちらでも動くため、Phase 4のPostgreSQL移行時に書き換えが不要になる。
-        // 列はtransactions.dateと修飾する（PostgreSQLでは修飾のないdateが型名と
-        // 解釈されうるため）。戻り値の型はドライバによって文字列にも数値にもなるのでintへ寄せる。
+        // 戻り値の型はドライバによって文字列にも数値にもなるのでintへ寄せる
         return Transaction::query()
-            ->where('user_id', $userId)
+            ->where('household_id', $householdId)
             ->selectRaw('DISTINCT EXTRACT(YEAR FROM transactions.date) as year')
             ->orderByDesc('year')
             ->pluck('year')
@@ -87,11 +83,11 @@ class TransactionRepository implements TransactionRepositoryInterface
         }
     }
 
-    public function findForUser(int $userId, int $transactionId): ?Transaction
+    public function findForHousehold(int $householdId, int $transactionId): ?Transaction
     {
-        // user_idでスコープすることで、他人の収支IDを指定されても取得できないようにする
+        // household_idでスコープすることで、別の世帯の収支IDを指定されても取得できないようにする
         return Transaction::query()
-            ->where('user_id', $userId)
+            ->where('household_id', $householdId)
             ->with('category')
             ->find($transactionId);
     }

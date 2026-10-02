@@ -41,7 +41,7 @@ class GetTransactionImageTest extends TestCase
             ->assertNotFound();
     }
 
-    public function test_他人の収支の画像は404になる(): void
+    public function test_別の世帯の収支の画像は404になる(): void
     {
         Storage::fake('local');
         $user = User::factory()->create();

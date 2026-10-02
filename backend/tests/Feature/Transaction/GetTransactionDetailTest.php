@@ -47,7 +47,7 @@ class GetTransactionDetailTest extends TestCase
             ->assertJsonPath('hasImage', true);
     }
 
-    public function test_他人の収支は404になる(): void
+    public function test_別の世帯の収支は404になる(): void
     {
         $user = User::factory()->create();
         $other = User::factory()->create();

@@ -55,7 +55,7 @@ class ApiErrorFormatTest extends TestCase
             ->assertJsonPath('error.code', ApiErrorCode::Unauthenticated->value);
     }
 
-    public function test_他人のレコードは404でコードを返す(): void
+    public function test_別の世帯のレコードは404でコードを返す(): void
     {
         $user = User::factory()->create();
         $other = User::factory()->create();
