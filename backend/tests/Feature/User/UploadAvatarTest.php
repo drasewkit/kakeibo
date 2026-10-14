@@ -74,11 +74,12 @@ class UploadAvatarTest extends TestCase
         $this->assertNotSame($oldVersion, $response->json('avatarVersion'));
     }
 
-    public function test_他人のIDを送っても自分の画像だけが変わる(): void
+    public function test_同じ世帯のメンバーのIDを送っても自分の画像だけが変わる(): void
     {
+        // 世帯のメンバーでも、他人のプロフィール画像は変更できない
         Storage::fake('local');
         $user = User::factory()->create();
-        $other = User::factory()->create();
+        $other = User::factory()->for($user->household)->create();
 
         $this->actingAs($user)->postJson(self::URI, [
             'userId' => $other->id,

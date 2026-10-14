@@ -26,9 +26,16 @@ Next.js（React）+ Laravel で作る家計簿アプリ。このファイルは�
 ## GitHub / Git運用
 
 - 個人アカウント: https://github.com/drasewkit 、リポジトリ: `drasewkit/kakeibo`
-- `develop`ブランチが**デフォルトブランチ**かつ日常の開発ブランチ
-- `main`は**リリース専用**。`develop → main`のプルリクエストをGitHub上で作成してマージする運用
-- `main`にはブランチ保護ルールを設定済み（PR必須・force push禁止・削除禁止・管理者にも適用）
+- `develop`ブランチが**デフォルトブランチ**かつ開発の統合ブランチ
+- **`develop`へ直接コミット・pushしない（厳守）**。作業は`develop`から切った作業ブランチで行い、`develop`向けのプルリクエストをGitHub上で作成してマージする
+  - ブランチ名は`{種別}/{内容}`のケバブケース。種別は`feature`（機能追加）/ `fix`（不具合修正）/ `refactor`（挙動を変えない整理）/ `docs`（ドキュメントのみ）/ `chore`（設定・依存更新など）
+    （例: `feature/household-foundation`, `fix/transaction-date-timezone`）
+  - コミットは**レビューしやすい単位に分ける**。1コミット1目的とし、DB変更・ロジック変更・テスト・ドキュメントなど性質の違う変更を、意味のまとまりごとに分ける。整形だけの変更は単独のコミットにする
+  - 各コミットの時点でテストが通る状態を保つ（途中のコミットで壊れていると、差分を追うときやリバート時に困るため）
+  - 理由: GitHub上でプルリクエストの差分を確認してから取り込むため（2026-10-02決定）
+- `main`は**リリース専用**。**`main`へも直接コミット・pushしない（厳守）**。`develop → main`のプルリクエストをGitHub上で作成してマージする運用
+- `main`・`develop`にはブランチ保護ルールを設定済み（PR必須・force push禁止・削除禁止・管理者にも適用）
+  - 承認数は0にしている（1人で開発しており、自分のPRは自分で承認できないため）
 - **コミットメッセージ・ドキュメント類はすべて日本語で記載する**
 
 ## コメント方針
@@ -70,9 +77,7 @@ Next.js（React）+ Laravel で作る家計簿アプリ。このファイルは�
 
 ## CI
 
-- GitHub Actions（`.github/workflows/ci.yml`）で `develop` への push と `main` へのプルリクエストに対して以下を実行する
-  - フロントエンド: `npm run lint` / `npx tsc --noEmit` / `npm run format:check`
-  - バックエンド: `./vendor/bin/pint --test` / `./vendor/bin/phpstan analyse` / `php artisan test`
+- GitHub Actions（`.github/workflows/ci.yml`）で `develop` への push と `develop`・`main` へのプルリクエストに対して、整形チェック・静的解析・型検査・テストを実行する（コマンドは`ci.yml`を参照）
 - 実行環境は開発コンテナに揃える（Node 22 / PHP 8.5）
 - 理由: Featureテスト（`backend/CLAUDE.md`参照）は、自動で実行されなければ回帰に気づけず、リファクタの安全網として機能しないため
 

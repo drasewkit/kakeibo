@@ -54,7 +54,7 @@ class DeleteTransactionImageTest extends TestCase
             ->assertJsonPath('hasImage', false);
     }
 
-    public function test_他人の収支の画像は404になり削除されない(): void
+    public function test_別の世帯の収支の画像は404になり削除されない(): void
     {
         Storage::fake('local');
         $user = User::factory()->create();
