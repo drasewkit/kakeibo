@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Transaction;
 
+use App\Models\Household;
 use App\Models\Transaction;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -35,10 +36,13 @@ class UploadTransactionImageTest extends TestCase
         Storage::disk('local')->assertExists($transaction->image_path);
     }
 
-    public function test_ユーザーごとのディレクトリに保存される(): void
+    public function test_世帯ごとのディレクトリに保存される(): void
     {
         Storage::fake('local');
+        // 世帯IDとユーザーIDが偶然一致しないよう、先に別の世帯を作っておく
+        Household::factory()->create();
         $user = User::factory()->create();
+        $this->assertNotSame($user->id, $user->household_id);
         $transaction = Transaction::factory()->for($user)->create();
 
         $this->actingAs($user)->postJson(self::URI, [
@@ -46,8 +50,7 @@ class UploadTransactionImageTest extends TestCase
             'image' => UploadedFile::fake()->image('receipt.jpg'),
         ])->assertOk();
 
-        // 他人のuser_idを推測してもアクセスできないようにする意図
-        $this->assertStringStartsWith("transaction-images/{$user->id}/", $transaction->refresh()->image_path);
+        $this->assertStringStartsWith("transaction-images/{$user->household_id}/", $transaction->refresh()->image_path);
     }
 
     public function test_保存先のパスはレスポンスに含まれない(): void
@@ -78,7 +81,7 @@ class UploadTransactionImageTest extends TestCase
         $this->assertNotSame($oldPath, $transaction->refresh()->image_path);
     }
 
-    public function test_他人の収支には添付できない(): void
+    public function test_別の世帯の収支には添付できない(): void
     {
         Storage::fake('local');
         $user = User::factory()->create();

@@ -36,7 +36,7 @@ class GetTransactionListTest extends TestCase
             ]);
     }
 
-    public function test_他人の収支は含まれない(): void
+    public function test_別の世帯の収支は含まれない(): void
     {
         $user = User::factory()->create();
         $other = User::factory()->create();
