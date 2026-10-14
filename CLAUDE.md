@@ -77,7 +77,7 @@ Next.js（React）+ Laravel で作る家計簿アプリ。このファイルは�
 
 ## CI
 
-- GitHub Actions（`.github/workflows/ci.yml`）で `develop` への push と `main` へのプルリクエストに対して、整形チェック・静的解析・型検査・テストを実行する（コマンドは`ci.yml`を参照）
+- GitHub Actions（`.github/workflows/ci.yml`）で `develop` への push と `develop`・`main` へのプルリクエストに対して、整形チェック・静的解析・型検査・テストを実行する（コマンドは`ci.yml`を参照）
 - 実行環境は開発コンテナに揃える（Node 22 / PHP 8.5）
 - 理由: Featureテスト（`backend/CLAUDE.md`参照）は、自動で実行されなければ回帰に気づけず、リファクタの安全網として機能しないため
 
