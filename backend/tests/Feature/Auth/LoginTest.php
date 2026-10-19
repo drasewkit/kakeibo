@@ -4,6 +4,8 @@ namespace Tests\Feature\Auth;
 
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\RateLimiter;
 use Tests\TestCase;
 
 /**
@@ -120,5 +122,34 @@ class LoginTest extends TestCase
 
         $this->postJson('/api/auth/login', ['email' => 'taro@example.com', 'password' => 'wrong'])
             ->assertStatus(429);
+    }
+
+    public function test_emailに配列を送っても500にならず422になる(): void
+    {
+        $this->postJson('/api/auth/login', ['email' => ['a'], 'password' => 'x'])
+            ->assertStatus(422)
+            ->assertJsonPath('error.code', 'VALIDATION_FAILED');
+    }
+
+    public function test_本番以外ではCF_Connecting_IPを偽装しても制限を回避できない(): void
+    {
+        for ($i = 1; $i <= 5; $i++) {
+            $this->postJson('/api/auth/login', ['email' => 'taro@example.com', 'password' => 'wrong'], ['CF-Connecting-IP' => "10.0.0.$i"]);
+        }
+
+        $this->postJson('/api/auth/login', ['email' => 'taro@example.com', 'password' => 'wrong'], ['CF-Connecting-IP' => '10.0.0.99'])
+            ->assertStatus(429);
+    }
+
+    public function test_本番ではCF_Connecting_IPを制限のキーに使う(): void
+    {
+        $this->app['env'] = 'production';
+
+        // 本番はCloudflareが付けた値を信頼する（HTTP経由だと本番扱いでCSRF検証の免除が外れるため、リミッターを直接呼ぶ）
+        $request = Request::create('/api/auth/login', 'POST', ['email' => 'Taro@Example.com'], server: ['HTTP_CF_CONNECTING_IP' => '203.0.113.1']);
+        $limits = RateLimiter::limiter('login')($request);
+
+        $this->assertSame('taro@example.com|203.0.113.1', $limits[0]->key);
+        $this->assertSame('203.0.113.1', $limits[1]->key);
     }
 }
