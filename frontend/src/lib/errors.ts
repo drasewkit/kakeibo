@@ -2,7 +2,11 @@ import { AxiosError } from "axios";
 
 // バックエンドが返すエラーコード（backend/CLAUDE.mdの「エラーレスポンス」参照）
 export type ApiErrorCode =
-  "VALIDATION_FAILED" | "UNAUTHENTICATED" | "NOT_FOUND" | "INTERNAL_ERROR";
+  | "VALIDATION_FAILED"
+  | "UNAUTHENTICATED"
+  | "NOT_FOUND"
+  | "TOO_MANY_REQUESTS"
+  | "INTERNAL_ERROR";
 
 // エラーレスポンスの形。fieldsはVALIDATION_FAILEDのときだけ含まれる
 type ApiError = {

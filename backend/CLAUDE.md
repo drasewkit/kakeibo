@@ -73,6 +73,7 @@ Laravel既定の`{message, errors}`は使わず、以下の形式に統一する
 | `VALIDATION_FAILED` | 422 | バリデーション失敗。`fields`を含む |
 | `UNAUTHENTICATED` | 401 | 未ログイン |
 | `NOT_FOUND` | 404 | 対象が存在しない、または所有権のないレコード（別の世帯の収支など。**403は使わない**） |
+| `TOO_MANY_REQUESTS` | 429 | レート制限の超過（ログインの総当たり対策）。`Retry-After`ヘッダを含む |
 | `INTERNAL_ERROR` | 500 | サーバエラー |
 
 - `message`は利用者にそのまま表示できる日本語
