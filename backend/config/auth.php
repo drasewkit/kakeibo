@@ -114,4 +114,16 @@ return [
 
     'password_timeout' => env('AUTH_PASSWORD_TIMEOUT', 10800),
 
+    /*
+    |--------------------------------------------------------------------------
+    | Registration Enabled
+    |--------------------------------------------------------------------------
+    |
+    | 新規登録を受け付けるかどうか。一般公開前は無効（false）にしておき、
+    | 公開するときに REGISTRATION_ENABLED=true にする。
+    |
+    */
+
+    'registration_enabled' => env('REGISTRATION_ENABLED', false),
+
 ];
