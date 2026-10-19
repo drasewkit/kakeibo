@@ -79,4 +79,46 @@ class LoginTest extends TestCase
         $response->assertStatus(422)
             ->assertJsonStructure(['error' => ['fields' => ['email', 'password']]]);
     }
+
+    public function test_同じメールで短時間に失敗を繰り返すと429になる(): void
+    {
+        User::factory()->create(['email' => 'taro@example.com']);
+
+        // 1分5回までは通常通り失敗の422を返す
+        for ($i = 0; $i < 5; $i++) {
+            $this->postJson('/api/auth/login', ['email' => 'taro@example.com', 'password' => 'wrong'])
+                ->assertStatus(422);
+        }
+
+        // 6回目は制限され、正しいパスワードでもログインできない
+        $this->postJson('/api/auth/login', ['email' => 'taro@example.com', 'password' => 'password'])
+            ->assertStatus(429)
+            ->assertJsonPath('error.code', 'TOO_MANY_REQUESTS')
+            ->assertHeader('Retry-After');
+
+        $this->assertGuest();
+    }
+
+    public function test_別のメールには制限が及ばない(): void
+    {
+        User::factory()->create(['email' => 'taro@example.com']);
+        User::factory()->create(['email' => 'hanako@example.com']);
+
+        for ($i = 0; $i < 6; $i++) {
+            $this->postJson('/api/auth/login', ['email' => 'taro@example.com', 'password' => 'wrong']);
+        }
+
+        $this->postJson('/api/auth/login', ['email' => 'hanako@example.com', 'password' => 'password'])
+            ->assertOk();
+    }
+
+    public function test_メールの大文字小文字を変えても同じ制限として数える(): void
+    {
+        for ($i = 0; $i < 5; $i++) {
+            $this->postJson('/api/auth/login', ['email' => 'Taro@Example.com', 'password' => 'wrong']);
+        }
+
+        $this->postJson('/api/auth/login', ['email' => 'taro@example.com', 'password' => 'wrong'])
+            ->assertStatus(429);
+    }
 }

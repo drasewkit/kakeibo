@@ -14,7 +14,7 @@ use Illuminate\Support\Facades\Route;
 // 新規登録は設定で有効にしたときだけ受け付ける（REGISTRATION_ENABLED）
 Route::post('/auth/register', [AuthController::class, 'register'])
     ->middleware(EnsureRegistrationEnabled::class);
-Route::post('/auth/login', [AuthController::class, 'login']);
+Route::post('/auth/login', [AuthController::class, 'login'])->middleware('throttle:login');
 
 // Sanctumのセッション認証が必要なエンドポイント
 Route::middleware('auth:sanctum')->group(function () {
