@@ -106,10 +106,19 @@ class HouseholdService
      */
     public function join(User $user, string $token): Household
     {
-        $this->acceptInvitation(
-            $token,
-            fn (Household $household) => $this->userRepository->update($user, ['household_id' => $household->id]),
-        );
+        $this->acceptInvitation($token, function (Household $household) use ($user) {
+            // 自分の世帯への招待を自分で使うと、パートナーに送ったリンクが黙って使用済みになるため断る
+            if ($user->household_id === $household->id) {
+                throw ValidationException::withMessages([
+                    'token' => 'すでにこの世帯に参加しています。',
+                ]);
+            }
+
+            // 元の世帯の未使用の招待を消す（残すと、そのリンクから元の世帯に残った収支が見えてしまう）
+            $this->invitationRepository->deleteUnusedForHousehold($user->household_id);
+
+            return $this->userRepository->update($user, ['household_id' => $household->id]);
+        });
 
         return $this->getDetail($user->refresh());
     }

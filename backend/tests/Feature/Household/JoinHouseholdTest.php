@@ -102,4 +102,29 @@ class JoinHouseholdTest extends TestCase
     {
         $this->postJson(self::URI, ['token' => self::TOKEN])->assertUnauthorized();
     }
+
+    public function test_自分の世帯への招待は使えず使用済みにもならない(): void
+    {
+        // 送る前にリンクを試しても、パートナーに送るリンクが無効にならないこと
+        $user = User::factory()->create();
+        $invitation = HouseholdInvitation::factory()->for($user->household)->withToken(self::TOKEN)->create(['created_by' => $user->id]);
+
+        $this->actingAs($user)->postJson(self::URI, ['token' => self::TOKEN])
+            ->assertStatus(422)
+            ->assertJsonStructure(['error' => ['fields' => ['token']]]);
+
+        $this->assertNull($invitation->refresh()->used_at);
+    }
+
+    public function test_参加すると元の世帯の未使用の招待は無効になる(): void
+    {
+        $inviter = User::factory()->create();
+        HouseholdInvitation::factory()->for($inviter->household)->withToken(self::TOKEN)->create(['created_by' => $inviter->id]);
+        $user = User::factory()->create();
+        $oldInvitation = HouseholdInvitation::factory()->for($user->household)->create(['created_by' => $user->id]);
+
+        $this->actingAs($user)->postJson(self::URI, ['token' => self::TOKEN])->assertOk();
+
+        $this->assertDatabaseMissing('household_invitations', ['id' => $oldInvitation->id]);
+    }
 }
