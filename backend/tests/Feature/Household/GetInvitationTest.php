@@ -71,4 +71,16 @@ class GetInvitationTest extends TestCase
             ->assertStatus(422)
             ->assertJsonStructure(['error' => ['fields' => ['token']]]);
     }
+
+    public function test_短時間に繰り返すと429になる(): void
+    {
+        // トークンの総当たりを抑えるため、1分30回までにする
+        for ($i = 0; $i < 30; $i++) {
+            $this->getJson(self::URI.'?token=unknown'.$i)->assertNotFound();
+        }
+
+        $this->getJson(self::URI.'?token=unknown')
+            ->assertStatus(429)
+            ->assertJsonPath('error.code', 'TOO_MANY_REQUESTS');
+    }
 }

@@ -14,11 +14,11 @@ use Illuminate\Support\Facades\Route;
 // 未ログインでも呼べる認証系エンドポイント
 // 新規登録は設定で有効にしたときだけ受け付ける（REGISTRATION_ENABLED）
 Route::post('/auth/register', [AuthController::class, 'register'])
-    ->middleware(EnsureRegistrationEnabled::class);
+    ->middleware([EnsureRegistrationEnabled::class, 'throttle:invitation']);
 Route::post('/auth/login', [AuthController::class, 'login'])->middleware('throttle:login');
 
 // 招待リンクから新規登録する人も見られるよう、招待内容の取得はログイン不要にする
-Route::get('/households/get-invitation', [HouseholdController::class, 'getInvitation']);
+Route::get('/households/get-invitation', [HouseholdController::class, 'getInvitation'])->middleware('throttle:invitation');
 
 // Sanctumのセッション認証が必要なエンドポイント
 Route::middleware('auth:sanctum')->group(function () {
@@ -30,7 +30,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/households/get-detail', [HouseholdController::class, 'getDetail']);
     Route::post('/households/update', [HouseholdController::class, 'update']);
     Route::post('/households/create-invitation', [HouseholdController::class, 'createInvitation']);
-    Route::post('/households/join', [HouseholdController::class, 'join']);
+    Route::post('/households/join', [HouseholdController::class, 'join'])->middleware('throttle:invitation');
 
     Route::get('/transactions/get-list', [TransactionController::class, 'getList']);
     Route::get('/transactions/get-detail', [TransactionController::class, 'getDetail']);
