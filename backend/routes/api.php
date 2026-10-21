@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\Category\CategoryController;
+use App\Http\Controllers\Household\HouseholdController;
 use App\Http\Controllers\Transaction\TransactionController;
 use App\Http\Controllers\User\UserController;
 use App\Http\Middleware\EnsureRegistrationEnabled;
@@ -22,6 +23,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/auth/get-user', [AuthController::class, 'getUser']);
 
     Route::get('/categories/get-list', [CategoryController::class, 'getList']);
+
+    Route::get('/households/get-detail', [HouseholdController::class, 'getDetail']);
+    Route::post('/households/update', [HouseholdController::class, 'update']);
 
     Route::get('/transactions/get-list', [TransactionController::class, 'getList']);
     Route::get('/transactions/get-detail', [TransactionController::class, 'getDetail']);

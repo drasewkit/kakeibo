@@ -10,4 +10,8 @@ use App\Models\Household;
 interface HouseholdRepositoryInterface
 {
     public function create(array $data): Household;
+
+    public function update(Household $household, array $data): Household;
+
+    public function loadMembers(Household $household): Household;
 }

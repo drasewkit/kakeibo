@@ -14,4 +14,17 @@ class HouseholdRepository implements HouseholdRepositoryInterface
     {
         return Household::create($data);
     }
+
+    public function update(Household $household, array $data): Household
+    {
+        $household->update($data);
+
+        return $household;
+    }
+
+    public function loadMembers(Household $household): Household
+    {
+        // メンバーは参加した順（id順）に並べる
+        return $household->load(['users' => fn ($query) => $query->orderBy('id')]);
+    }
 }
