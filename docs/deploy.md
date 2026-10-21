@@ -61,11 +61,22 @@ docker compose -f docker-compose.prod.yml build frontend
 docker compose -f docker-compose.prod.yml up -d backend frontend
 ```
 
-**`backend/database/migrations/` が変わった場合**は、上のあとにマイグレーションも流す
+**`backend/database/migrations/` が変わった場合**は、上の `up -d` の代わりに、backend を止めてから移行して起動する
 
 ```bash
-docker compose -f docker-compose.prod.yml exec backend php artisan migrate --force
+docker compose -f docker-compose.prod.yml build backend
+docker compose -f docker-compose.prod.yml build frontend
+docker compose -f docker-compose.prod.yml stop backend
+docker compose -f docker-compose.prod.yml run --rm backend php artisan migrate --force
+docker compose -f docker-compose.prod.yml up -d backend frontend
 ```
+
+- 作業中は利用者（本人・妻）に使わないよう伝える。backend が止まっている間（移行が終わるまで、数十秒程度）は API が応答しない
+- **先に `up -d` してから移行しない**。新しいコードが移行前の DB を読み、移行が終わるまで一覧や登録がエラーになる
+- **backend を動かしたまま移行しない**。移行の途中で古いコードが行を作ると、列を必須にする変更が失敗することがある。
+  MySQL のテーブル変更は途中で失敗しても元に戻らないため、再実行もできなくなり手作業での修復が必要になる
+- `run --rm` は、止めた backend とは別に使い捨てのコンテナを起動してコマンドだけを実行する（終わると消える）
+- 2026-10-21 の世帯の導入（`household_id` の追加）はこの手順で反映した
 
 - ビルドは**必ず1つずつ**。同時に走らせるとメモリ 1GiB では足りない
 - Session Manager は **20分無操作で切断**される。長いビルドは下の「長いビルドを接続と切り離す」を使う
