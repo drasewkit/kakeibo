@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Household;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Household\GetInvitationRequest;
+use App\Http\Requests\Household\JoinHouseholdRequest;
 use App\Http\Requests\Household\UpdateHouseholdRequest;
 use App\Http\Resources\Household\HouseholdResource;
 use App\Http\Resources\Household\InvitationLinkResource;
@@ -52,5 +53,13 @@ class HouseholdController extends Controller
         $invitation = $this->householdService->getInvitation($request->validated('token'));
 
         return InvitationResource::make($invitation)->response();
+    }
+
+    public function join(JoinHouseholdRequest $request): JsonResponse
+    {
+        // 招待先の世帯に移り、参加後の世帯を返す
+        $household = $this->householdService->join($request->user(), $request->validated('token'));
+
+        return HouseholdResource::make($household)->response();
     }
 }

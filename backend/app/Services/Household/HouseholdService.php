@@ -7,6 +7,8 @@ use App\Models\HouseholdInvitation;
 use App\Models\User;
 use App\Repositories\Interfaces\HouseholdInvitationRepositoryInterface;
 use App\Repositories\Interfaces\HouseholdRepositoryInterface;
+use App\Repositories\Interfaces\UserRepositoryInterface;
+use Closure;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -27,6 +29,7 @@ class HouseholdService
     public function __construct(
         private readonly HouseholdRepositoryInterface $householdRepository,
         private readonly HouseholdInvitationRepositoryInterface $invitationRepository,
+        private readonly UserRepositoryInterface $userRepository,
     ) {}
 
     /**
@@ -86,6 +89,51 @@ class HouseholdService
         }
 
         return $invitation->load(['household' => fn ($query) => $query->withCount('users'), 'creator']);
+    }
+
+    /**
+     * 招待を使って、ログインユーザーを招待先の世帯に参加させる
+     *
+     * 元の世帯とそこにある収支は移さず、そのまま残す（利用者が本人とパートナーの2人だけのため。一般公開前に見直す）
+     */
+    public function join(User $user, string $token): Household
+    {
+        $this->acceptInvitation(
+            $token,
+            fn (Household $household) => $this->userRepository->update($user, ['household_id' => $household->id]),
+        );
+
+        return $this->getDetail($user->refresh());
+    }
+
+    /**
+     * 招待を検証してメンバーを追加し、招待を使用済みにする（参加・招待からの新規登録で共通）
+     *
+     * @param  Closure(Household): User  $addMember  招待先の世帯を受け取り、メンバーになったユーザーを返す
+     */
+    public function acceptInvitation(string $token, Closure $addMember): User
+    {
+        return DB::transaction(function () use ($token, $addMember) {
+            // 同じ招待が同時に使われないよう、招待の行をロックして取得する
+            $invitation = $this->invitationRepository->findValidByTokenHash($this->hashToken($token), lockForUpdate: true);
+
+            if ($invitation === null) {
+                throw new ModelNotFoundException('Invitation not found.');
+            }
+
+            // 招待を作ったあとに世帯が埋まっていれば参加できない
+            $household = $this->householdRepository->findForUpdate($invitation->household_id);
+            $this->ensureNotFull($household, 'token');
+
+            $member = $addMember($household);
+
+            $this->invitationRepository->update($invitation, [
+                'used_at' => now(),
+                'used_by' => $member->id,
+            ]);
+
+            return $member;
+        });
     }
 
     /**

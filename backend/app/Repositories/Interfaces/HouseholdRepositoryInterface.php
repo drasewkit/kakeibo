@@ -14,4 +14,6 @@ interface HouseholdRepositoryInterface
     public function update(Household $household, array $data): Household;
 
     public function loadMembers(Household $household): Household;
+
+    public function findForUpdate(int $householdId): Household;
 }

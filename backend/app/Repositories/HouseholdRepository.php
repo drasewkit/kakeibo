@@ -22,6 +22,12 @@ class HouseholdRepository implements HouseholdRepositoryInterface
         return $household;
     }
 
+    public function findForUpdate(int $householdId): Household
+    {
+        // 同時に参加しても人数の上限を超えないよう、世帯の行をロックする
+        return Household::query()->lockForUpdate()->findOrFail($householdId);
+    }
+
     public function loadMembers(Household $household): Household
     {
         // メンバーは参加した順（id順）に並べる

@@ -30,6 +30,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/households/get-detail', [HouseholdController::class, 'getDetail']);
     Route::post('/households/update', [HouseholdController::class, 'update']);
     Route::post('/households/create-invitation', [HouseholdController::class, 'createInvitation']);
+    Route::post('/households/join', [HouseholdController::class, 'join']);
 
     Route::get('/transactions/get-list', [TransactionController::class, 'getList']);
     Route::get('/transactions/get-detail', [TransactionController::class, 'getDetail']);
