@@ -96,7 +96,7 @@ class HouseholdService
             throw new ModelNotFoundException('Invitation not found.');
         }
 
-        return $invitation->load(['household' => fn ($query) => $query->withCount('users'), 'creator']);
+        return $this->invitationRepository->loadForDisplay($invitation);
     }
 
     /**
@@ -159,7 +159,7 @@ class HouseholdService
      */
     private function ensureNotFull(Household $household, string $field): void
     {
-        if ($household->users()->count() >= Household::MAX_MEMBERS) {
+        if ($this->householdRepository->countMembers($household) >= Household::MAX_MEMBERS) {
             throw ValidationException::withMessages([
                 $field => 'この世帯はすでに'.Household::MAX_MEMBERS.'人で利用しています。',
             ]);

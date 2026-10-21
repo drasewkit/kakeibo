@@ -41,4 +41,10 @@ class HouseholdInvitationRepository implements HouseholdInvitationRepositoryInte
             ->when($lockForUpdate, fn ($query) => $query->lockForUpdate())
             ->first();
     }
+
+    public function loadForDisplay(HouseholdInvitation $invitation): HouseholdInvitation
+    {
+        // 招待内容の表示に使う、招待先の世帯（人数つき）と招待した人を読み込む
+        return $invitation->load(['household' => fn ($query) => $query->withCount('users'), 'creator']);
+    }
 }

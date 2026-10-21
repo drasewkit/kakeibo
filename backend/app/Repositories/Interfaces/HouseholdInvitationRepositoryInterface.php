@@ -16,4 +16,6 @@ interface HouseholdInvitationRepositoryInterface
     public function deleteUnusedForHousehold(int $householdId): void;
 
     public function findValidByTokenHash(string $tokenHash, bool $lockForUpdate = false): ?HouseholdInvitation;
+
+    public function loadForDisplay(HouseholdInvitation $invitation): HouseholdInvitation;
 }

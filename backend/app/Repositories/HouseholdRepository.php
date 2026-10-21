@@ -28,6 +28,11 @@ class HouseholdRepository implements HouseholdRepositoryInterface
         return Household::query()->lockForUpdate()->findOrFail($householdId);
     }
 
+    public function countMembers(Household $household): int
+    {
+        return $household->users()->count();
+    }
+
     public function loadMembers(Household $household): Household
     {
         // メンバーは参加した順（id順）に並べる
