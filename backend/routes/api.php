@@ -17,6 +17,9 @@ Route::post('/auth/register', [AuthController::class, 'register'])
     ->middleware(EnsureRegistrationEnabled::class);
 Route::post('/auth/login', [AuthController::class, 'login'])->middleware('throttle:login');
 
+// 招待リンクから新規登録する人も見られるよう、招待内容の取得はログイン不要にする
+Route::get('/households/get-invitation', [HouseholdController::class, 'getInvitation']);
+
 // Sanctumのセッション認証が必要なエンドポイント
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/auth/logout', [AuthController::class, 'logout']);
@@ -26,6 +29,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::get('/households/get-detail', [HouseholdController::class, 'getDetail']);
     Route::post('/households/update', [HouseholdController::class, 'update']);
+    Route::post('/households/create-invitation', [HouseholdController::class, 'createInvitation']);
 
     Route::get('/transactions/get-list', [TransactionController::class, 'getList']);
     Route::get('/transactions/get-detail', [TransactionController::class, 'getDetail']);
