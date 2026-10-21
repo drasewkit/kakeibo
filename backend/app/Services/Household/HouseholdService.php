@@ -110,10 +110,11 @@ class HouseholdService
      * 招待を検証してメンバーを追加し、招待を使用済みにする（参加・招待からの新規登録で共通）
      *
      * @param  Closure(Household): User  $addMember  招待先の世帯を受け取り、メンバーになったユーザーを返す
+     * @param  string  $tokenField  世帯が埋まっていたときにエラーを返す項目名（リクエストのフィールド名）
      */
-    public function acceptInvitation(string $token, Closure $addMember): User
+    public function acceptInvitation(string $token, Closure $addMember, string $tokenField = 'token'): User
     {
-        return DB::transaction(function () use ($token, $addMember) {
+        return DB::transaction(function () use ($token, $addMember, $tokenField) {
             // 同じ招待が同時に使われないよう、招待の行をロックして取得する
             $invitation = $this->invitationRepository->findValidByTokenHash($this->hashToken($token), lockForUpdate: true);
 
@@ -123,7 +124,7 @@ class HouseholdService
 
             // 招待を作ったあとに世帯が埋まっていれば参加できない
             $household = $this->householdRepository->findForUpdate($invitation->household_id);
-            $this->ensureNotFull($household, 'token');
+            $this->ensureNotFull($household, $tokenField);
 
             $member = $addMember($household);
 

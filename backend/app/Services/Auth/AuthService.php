@@ -2,9 +2,11 @@
 
 namespace App\Services\Auth;
 
+use App\Models\Household;
 use App\Models\User;
 use App\Repositories\Interfaces\HouseholdRepositoryInterface;
 use App\Repositories\Interfaces\UserRepositoryInterface;
+use App\Services\Household\HouseholdService;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
@@ -23,31 +25,64 @@ class AuthService
     public function __construct(
         private readonly UserRepositoryInterface $userRepository,
         private readonly HouseholdRepositoryInterface $householdRepository,
+        private readonly HouseholdService $householdService,
     ) {}
 
     /**
-     * ユーザーを1人世帯とともに新規作成し、Sanctumのセッションにログインさせる
+     * ユーザーを新規作成し、Sanctumのセッションにログインさせる
+     *
+     * 招待トークンがあれば招待先の世帯に入れ、無ければ1人世帯を作る。
      */
     public function register(array $data): User
     {
-        // 世帯とユーザーは片方だけ残らないよう、1つのトランザクションで作る
-        $user = DB::transaction(function () use ($data) {
-            $household = $this->householdRepository->create([
-                'name' => $this->defaultHouseholdName($data['name']),
-            ]);
-
-            // パスワードはハッシュ化してから保存する
-            return $this->userRepository->create([
-                'household_id' => $household->id,
-                'name' => $data['name'],
-                'email' => $data['email'],
-                'password' => Hash::make($data['password']),
-            ]);
-        });
+        $user = empty($data['invitationToken'])
+            ? $this->registerWithNewHousehold($data)
+            : $this->registerWithInvitation($data);
 
         Auth::login($user);
 
         return $user;
+    }
+
+    /**
+     * 1人世帯とともにユーザーを作る
+     */
+    private function registerWithNewHousehold(array $data): User
+    {
+        // 世帯とユーザーは片方だけ残らないよう、1つのトランザクションで作る
+        return DB::transaction(function () use ($data) {
+            $household = $this->householdRepository->create([
+                'name' => $this->defaultHouseholdName($data['name']),
+            ]);
+
+            return $this->createUser($household, $data);
+        });
+    }
+
+    /**
+     * 招待を検証し、招待先の世帯のメンバーとしてユーザーを作る（無効な招待は404、世帯が埋まっていれば422）
+     */
+    private function registerWithInvitation(array $data): User
+    {
+        return $this->householdService->acceptInvitation(
+            $data['invitationToken'],
+            fn (Household $household) => $this->createUser($household, $data),
+            'invitationToken',
+        );
+    }
+
+    /**
+     * 指定した世帯のメンバーとしてユーザーを作る
+     */
+    private function createUser(Household $household, array $data): User
+    {
+        // パスワードはハッシュ化してから保存する
+        return $this->userRepository->create([
+            'household_id' => $household->id,
+            'name' => $data['name'],
+            'email' => $data['email'],
+            'password' => Hash::make($data['password']),
+        ]);
     }
 
     /**

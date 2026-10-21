@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Auth;
 
+use App\Models\HouseholdInvitation;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -12,6 +13,8 @@ use Tests\TestCase;
 class RegisterTest extends TestCase
 {
     use RefreshDatabase;
+
+    private const TOKEN = 'abcdefghijklmnopqrstuvwxyz0123456789ABCD';
 
     protected function setUp(): void
     {
@@ -155,5 +158,61 @@ class RegisterTest extends TestCase
         config(['auth.registration_enabled' => false]);
 
         $this->postJson('/api/auth/register', [])->assertStatus(404);
+    }
+
+    public function test_新規登録が無効でも招待トークンがあれば招待先の世帯に登録できる(): void
+    {
+        config(['auth.registration_enabled' => false]);
+        $inviter = User::factory()->create();
+        $invitation = HouseholdInvitation::factory()->for($inviter->household)->withToken(self::TOKEN)->create(['created_by' => $inviter->id]);
+
+        $this->postJson('/api/auth/register', $this->validPayload(['invitationToken' => self::TOKEN]))
+            ->assertStatus(201);
+
+        // 1人世帯は作らず、招待先の世帯に入る
+        $user = User::where('email', 'taro@example.com')->firstOrFail();
+        $this->assertSame($inviter->household_id, $user->household_id);
+        $this->assertDatabaseCount('households', 1);
+        $this->assertAuthenticatedAs($user);
+
+        $invitation->refresh();
+        $this->assertNotNull($invitation->used_at);
+        $this->assertSame($user->id, $invitation->used_by);
+    }
+
+    public function test_無効な招待トークンでは404でユーザーを作らない(): void
+    {
+        config(['auth.registration_enabled' => false]);
+        HouseholdInvitation::factory()->withToken(self::TOKEN)->expired()->create();
+
+        $this->postJson('/api/auth/register', $this->validPayload(['invitationToken' => self::TOKEN]))
+            ->assertStatus(404)
+            ->assertJsonPath('error.code', 'NOT_FOUND');
+
+        $this->assertDatabaseMissing('users', ['email' => 'taro@example.com']);
+    }
+
+    public function test_招待先の世帯が2人揃っていれば422でユーザーを作らない(): void
+    {
+        $inviter = User::factory()->create();
+        User::factory()->for($inviter->household)->create();
+        HouseholdInvitation::factory()->for($inviter->household)->withToken(self::TOKEN)->create(['created_by' => $inviter->id]);
+
+        $this->postJson('/api/auth/register', $this->validPayload(['invitationToken' => self::TOKEN]))
+            ->assertStatus(422)
+            ->assertJsonStructure(['error' => ['fields' => ['invitationToken']]]);
+
+        $this->assertDatabaseMissing('users', ['email' => 'taro@example.com']);
+    }
+
+    public function test_招待トークンがあっても入力が不正なら422で招待は使わない(): void
+    {
+        config(['auth.registration_enabled' => false]);
+        $invitation = HouseholdInvitation::factory()->withToken(self::TOKEN)->create();
+
+        $this->postJson('/api/auth/register', $this->validPayload(['invitationToken' => self::TOKEN, 'email' => 'not-an-email']))
+            ->assertStatus(422);
+
+        $this->assertNull($invitation->refresh()->used_at);
     }
 }
