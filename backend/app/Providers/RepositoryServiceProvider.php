@@ -3,8 +3,10 @@
 namespace App\Providers;
 
 use App\Repositories\CategoryRepository;
+use App\Repositories\HouseholdInvitationRepository;
 use App\Repositories\HouseholdRepository;
 use App\Repositories\Interfaces\CategoryRepositoryInterface;
+use App\Repositories\Interfaces\HouseholdInvitationRepositoryInterface;
 use App\Repositories\Interfaces\HouseholdRepositoryInterface;
 use App\Repositories\Interfaces\TransactionRepositoryInterface;
 use App\Repositories\Interfaces\UserRepositoryInterface;
@@ -24,5 +26,6 @@ class RepositoryServiceProvider extends ServiceProvider
         $this->app->bind(CategoryRepositoryInterface::class, CategoryRepository::class);
         $this->app->bind(TransactionRepositoryInterface::class, TransactionRepository::class);
         $this->app->bind(HouseholdRepositoryInterface::class, HouseholdRepository::class);
+        $this->app->bind(HouseholdInvitationRepositoryInterface::class, HouseholdInvitationRepository::class);
     }
 }
