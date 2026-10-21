@@ -20,6 +20,9 @@ services:
         build:
             context: ./frontend
             dockerfile: Dockerfile.prod
+            args:
+                # 新規登録の受付可否。ルートの .env で指定する（未指定は無効）
+                NEXT_PUBLIC_REGISTRATION_ENABLED: ${NEXT_PUBLIC_REGISTRATION_ENABLED:-false}
         restart: unless-stopped
         networks:
             - kakeibo

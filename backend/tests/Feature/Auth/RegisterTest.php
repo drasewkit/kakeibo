@@ -13,6 +13,14 @@ class RegisterTest extends TestCase
 {
     use RefreshDatabase;
 
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        // 新規登録は既定で無効のため、このテストでは有効にしておく
+        config(['auth.registration_enabled' => true]);
+    }
+
     /**
      * 正常系のリクエストボディ
      *
@@ -129,5 +137,23 @@ class RegisterTest extends TestCase
 
         $response->assertStatus(422)
             ->assertJsonStructure(['error' => ['fields' => ['password']]]);
+    }
+
+    public function test_新規登録が無効のときは404でユーザーを作らない(): void
+    {
+        config(['auth.registration_enabled' => false]);
+
+        $this->postJson('/api/auth/register', $this->validPayload())
+            ->assertStatus(404)
+            ->assertJsonPath('error.code', 'NOT_FOUND');
+
+        $this->assertDatabaseMissing('users', ['email' => 'taro@example.com']);
+    }
+
+    public function test_新規登録が無効のときは入力が不正でも404を返す(): void
+    {
+        config(['auth.registration_enabled' => false]);
+
+        $this->postJson('/api/auth/register', [])->assertStatus(404);
     }
 }

@@ -172,6 +172,8 @@ openssl rand -base64 32    # APP_KEY 用。backend/.env に APP_KEY=base64:<出�
 - `DB_PASSWORD` は `.env` と `backend/.env` で**同じ値**にする
 - `APP_KEY` は **`php artisan key:generate` では作れない**。`backend/.dockerignore` が `.env` を除外しているため、
   コンテナ内に書き込み先の `.env` が無い（値は `env_file` で環境変数として渡っている）
+- 新規登録は**既定で無効**（一般公開するまでの措置）。受け付けるようにするときは、`backend/.env` の `REGISTRATION_ENABLED=true` と
+  `.env` の `NEXT_PUBLIC_REGISTRATION_ENABLED=true` の**両方**を設定する。フロントはビルド時に値が埋め込まれるため、`frontend` の再ビルドが必要
 - `SESSION_DOMAIN` は**先頭ドットなし**の `kakeibo.drasewkit.dev` のまま。`.drasewkit.dev` にすると他のサブドメインにもセッションクッキーが送られる
 
 ### 5. ビルドして起動する
