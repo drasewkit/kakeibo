@@ -35,9 +35,11 @@ class AuthService
      */
     public function register(array $data): User
     {
-        $user = empty($data['invitationToken'])
-            ? $this->registerWithNewHousehold($data)
-            : $this->registerWithInvitation($data);
+        // 「トークンがあるか」の判定は登録可否のミドルウェアとそろえる（"0" も空ではなくトークンとして扱う）
+        $token = $data['invitationToken'] ?? null;
+        $user = is_string($token) && $token !== ''
+            ? $this->registerWithInvitation($data)
+            : $this->registerWithNewHousehold($data);
 
         Auth::login($user);
 

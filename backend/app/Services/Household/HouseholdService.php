@@ -78,6 +78,14 @@ class HouseholdService
     }
 
     /**
+     * 招待トークンが有効か（存在し、期限内で、未使用か）を返す
+     */
+    public function hasValidInvitation(string $token): bool
+    {
+        return $this->invitationRepository->findValidByTokenHash($this->hashToken($token)) !== null;
+    }
+
+    /**
      * 招待トークンから有効な招待を返す（存在しない・期限切れ・使用済みは区別せず404）
      */
     public function getInvitation(string $token): HouseholdInvitation

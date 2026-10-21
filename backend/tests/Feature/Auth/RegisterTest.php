@@ -215,4 +215,27 @@ class RegisterTest extends TestCase
 
         $this->assertNull($invitation->refresh()->used_at);
     }
+
+    public function test_新規登録が無効のとき招待トークンが0でも登録できない(): void
+    {
+        // 「トークンがある」の判定のずれで、通常の登録として扱われないこと
+        config(['auth.registration_enabled' => false]);
+
+        $this->postJson('/api/auth/register', $this->validPayload(['invitationToken' => '0']))
+            ->assertStatus(404);
+
+        $this->assertDatabaseMissing('users', ['email' => 'taro@example.com']);
+        $this->assertDatabaseCount('households', 0);
+    }
+
+    public function test_新規登録が無効のときでたらめなトークンでは入力チェックの前に404になる(): void
+    {
+        // 登録済みのメールアドレスでも422（使用済み）を返さず、登録の有無を探られないようにする
+        config(['auth.registration_enabled' => false]);
+        User::factory()->create(['email' => 'taro@example.com']);
+
+        $this->postJson('/api/auth/register', $this->validPayload(['invitationToken' => 'made-up-token']))
+            ->assertStatus(404)
+            ->assertJsonPath('error.code', 'NOT_FOUND');
+    }
 }
