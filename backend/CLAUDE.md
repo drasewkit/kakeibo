@@ -31,27 +31,6 @@
 - 理由: ルーティングの見通しの良さとIDのバリデーション一元化を重視して決定した。
   操作名からリソース名を除くのは、旧「1コントローラ1アクション・URI末尾＝コントローラー名」規約の
   名残で冗長になっていたため（2026-09-19に見直し）
-
-エンドポイント一覧:
-
-| メソッド | URI | コントローラーのメソッド |
-|---|---|---|
-| POST | `/auth/register` | `AuthController::register()` |
-| POST | `/auth/login` | `AuthController::login()` |
-| POST | `/auth/logout` | `AuthController::logout()` |
-| GET | `/auth/get-user` | `AuthController::getUser()` |
-| GET | `/categories/get-list` | `CategoryController::getList()` |
-| GET | `/transactions/get-list` | `TransactionController::getList()` |
-| GET | `/transactions/get-detail` | `TransactionController::getDetail()` |
-| POST | `/transactions/create` | `TransactionController::create()` |
-| POST | `/transactions/update` | `TransactionController::update()` |
-| POST | `/transactions/delete` | `TransactionController::delete()` |
-| GET | `/transactions/get-image` | `TransactionController::getImage()` |
-| POST | `/transactions/upload-image` | `TransactionController::uploadImage()` |
-| POST | `/transactions/delete-image` | `TransactionController::deleteImage()` |
-| GET | `/users/get-avatar` | `UserController::getAvatar()` |
-| POST | `/users/upload-avatar` | `UserController::uploadAvatar()` |
-| POST | `/users/delete-avatar` | `UserController::deleteAvatar()` |
 - 再検討条件: 外部に公開するAPIを出す場合
 
 ### コントローラの粒度（Laravel実装における規約）
@@ -67,8 +46,13 @@
 ### 認可
 
 - **Laravel Policyを使わず、Repository層のクエリスコープで行う**
-  - 例: `TransactionRepository::findForUser(userId, transactionId)`のように、常にログインユーザーのIDでスコープしたクエリでレコードを取得する
-  - 対象レコードが存在しない場合と、他人のレコードで所有権がない場合は**区別せず一律404**を返す（存在有無の情報漏洩を避けるため）
+  - 例: `TransactionRepository::findForHousehold(householdId, transactionId)`のように、常にログインユーザーの所有単位でスコープしたクエリでレコードを取得する
+  - 対象レコードが存在しない場合と、所有権がない場合は**区別せず一律404**を返す（存在有無の情報漏洩を避けるため）
+- **収支の所有者は世帯（`households`）**。`transactions.household_id`でスコープし、同じ世帯のメンバーは相手が記帳した収支も閲覧・編集・削除できる
+  - `transactions.user_id`は所有者ではなく「記帳者」。スコープには使わない
+  - ユーザーは必ず1つの世帯に属する（`users.household_id`は必須）。新規登録時に1人世帯を作る
+  - プロフィール画像の登録・削除は本人のみ。取得は同じ世帯のメンバーまで
+  - 理由: 夫婦がそれぞれのアカウントで1つの家計簿を共有するため（2026-10-02導入）
 
 ### エラーレスポンス
 
@@ -88,7 +72,8 @@ Laravel既定の`{message, errors}`は使わず、以下の形式に統一する
 |---|---|---|
 | `VALIDATION_FAILED` | 422 | バリデーション失敗。`fields`を含む |
 | `UNAUTHENTICATED` | 401 | 未ログイン |
-| `NOT_FOUND` | 404 | 対象が存在しない、または他人のレコード（**403は使わない**） |
+| `NOT_FOUND` | 404 | 対象が存在しない、または所有権のないレコード（別の世帯の収支など。**403は使わない**） |
+| `TOO_MANY_REQUESTS` | 429 | レート制限の超過（ログインの総当たり対策）。`Retry-After`ヘッダを含む |
 | `INTERNAL_ERROR` | 500 | サーバエラー |
 
 - `message`は利用者にそのまま表示できる日本語
@@ -167,7 +152,7 @@ Laravel既定の`{message, errors}`は使わず、以下の形式に統一する
 - 最低限の観点:
   - 正常系のレスポンス形（Resourceが定義した通りのキーが返るか）
   - 未ログイン時に401（`UNAUTHENTICATED`）
-  - 他人のレコードへのアクセスが404（`NOT_FOUND`）
+  - 所有権のないレコード（別の世帯の収支など）へのアクセスが404（`NOT_FOUND`）
   - バリデーション失敗が422（`VALIDATION_FAILED`）で`fields`を含む
 - 理由: 現状APIの仕様書がフロントの手書き`types.ts`しかなく、実レスポンスとの乖離を検知できない。コントローラ再編のようなリファクタや機能追加（世帯の導入など）で、認可やレスポンスの形が壊れていないことを保証する安全網になる
 - 再検討条件: なし

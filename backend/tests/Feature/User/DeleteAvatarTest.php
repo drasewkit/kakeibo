@@ -42,11 +42,12 @@ class DeleteAvatarTest extends TestCase
             ->assertJsonPath('hasAvatar', false);
     }
 
-    public function test_他人のIDを送っても他人の画像は消えない(): void
+    public function test_同じ世帯のメンバーのIDを送ってもその人の画像は消えない(): void
     {
+        // 世帯のメンバーでも、他人のプロフィール画像は削除できない
         Storage::fake('local');
         $user = User::factory()->create();
-        $other = User::factory()->create();
+        $other = User::factory()->for($user->household)->create();
         $path = UploadedFile::fake()->image('other.jpg')->store('avatars/'.$other->id, 'local');
         $other->update(['avatar_path' => $path]);
 

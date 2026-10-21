@@ -42,7 +42,7 @@ class DeleteTransactionTest extends TestCase
         Storage::disk('local')->assertMissing($path);
     }
 
-    public function test_他人の収支は404になり削除されない(): void
+    public function test_別の世帯の収支は404になり削除されない(): void
     {
         $user = User::factory()->create();
         $other = User::factory()->create();

@@ -1,11 +1,11 @@
 name: CI
 
-# CLAUDE.mdの「CI」方針に対応。developへのpushと、mainへのプルリクエストで検証する
+# CLAUDE.mdの「CI」方針に対応。developへのpushと、develop・mainへのプルリクエストで検証する
 on:
   push:
     branches: [develop]
   pull_request:
-    branches: [main]
+    branches: [develop, main]
 
 jobs:
   frontend:

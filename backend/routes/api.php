@@ -4,14 +4,17 @@ use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\Category\CategoryController;
 use App\Http\Controllers\Transaction\TransactionController;
 use App\Http\Controllers\User\UserController;
+use App\Http\Middleware\EnsureRegistrationEnabled;
 use Illuminate\Support\Facades\Route;
 
 // URIは /{リソース複数形}/{操作名} 。操作名にリソース名は繰り返さない（backend/CLAUDE.md参照）
 // GET/POSTのみを使用し、更新・削除対象のIDはURLではなくバリデーション対象として受け取る
 
 // 未ログインでも呼べる認証系エンドポイント
-Route::post('/auth/register', [AuthController::class, 'register']);
-Route::post('/auth/login', [AuthController::class, 'login']);
+// 新規登録は設定で有効にしたときだけ受け付ける（REGISTRATION_ENABLED）
+Route::post('/auth/register', [AuthController::class, 'register'])
+    ->middleware(EnsureRegistrationEnabled::class);
+Route::post('/auth/login', [AuthController::class, 'login'])->middleware('throttle:login');
 
 // Sanctumのセッション認証が必要なエンドポイント
 Route::middleware('auth:sanctum')->group(function () {

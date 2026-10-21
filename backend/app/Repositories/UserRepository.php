@@ -22,11 +22,11 @@ class UserRepository implements UserRepositoryInterface
         return $user;
     }
 
-    public function findVisibleTo(int $viewerId, int $userId): ?User
+    public function findInHousehold(int $householdId, int $userId): ?User
     {
-        // 閲覧できるのは現状では自分だけ。世帯を導入したら同じ世帯のメンバーまで広げる
+        // 同じ世帯のメンバーだけを取得できるようにする
         return User::query()
-            ->where('id', $viewerId)
+            ->where('household_id', $householdId)
             ->find($userId);
     }
 }

@@ -14,6 +14,9 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 # APIは同一オリジンで配信するため NEXT_PUBLIC_API_URL は設定しない。
 # axiosのbaseURLがundefinedになり、相対パスとして同じホストへ飛ぶ
+# 新規登録の受付可否はビルド時に埋め込まれる（既定は無効）
+ARG NEXT_PUBLIC_REGISTRATION_ENABLED=false
+ENV NEXT_PUBLIC_REGISTRATION_ENABLED=$NEXT_PUBLIC_REGISTRATION_ENABLED
 RUN npm run build
 
 # --- 実行 ---

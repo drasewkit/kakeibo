@@ -3,7 +3,9 @@
 namespace App\Providers;
 
 use App\Repositories\CategoryRepository;
+use App\Repositories\HouseholdRepository;
 use App\Repositories\Interfaces\CategoryRepositoryInterface;
+use App\Repositories\Interfaces\HouseholdRepositoryInterface;
 use App\Repositories\Interfaces\TransactionRepositoryInterface;
 use App\Repositories\Interfaces\UserRepositoryInterface;
 use App\Repositories\TransactionRepository;
@@ -21,5 +23,6 @@ class RepositoryServiceProvider extends ServiceProvider
         $this->app->bind(UserRepositoryInterface::class, UserRepository::class);
         $this->app->bind(CategoryRepositoryInterface::class, CategoryRepository::class);
         $this->app->bind(TransactionRepositoryInterface::class, TransactionRepository::class);
+        $this->app->bind(HouseholdRepositoryInterface::class, HouseholdRepository::class);
     }
 }

@@ -5,6 +5,7 @@ namespace App\Exceptions;
 use App\Enums\ApiErrorCode;
 use Illuminate\Auth\AuthenticationException;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
+use Illuminate\Http\Exceptions\ThrottleRequestsException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Validation\ValidationException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
@@ -36,6 +37,15 @@ class ApiExceptionRenderer
         // 所有権が無い場合もここに来る（403は使わず存在しない場合と区別しない方針）
         if ($e instanceof ModelNotFoundException || $e instanceof NotFoundHttpException) {
             return self::make(ApiErrorCode::NotFound, 404, '対象が見つかりません。');
+        }
+
+        // レート制限の超過。待つべき秒数はRetry-Afterヘッダで伝える
+        if ($e instanceof ThrottleRequestsException) {
+            return self::make(
+                ApiErrorCode::TooManyRequests,
+                429,
+                '試行回数が多すぎます。しばらくしてからやり直してください。',
+            )->withHeaders($e->getHeaders());
         }
 
         // デバッグ時はLaravel既定の詳細な画面・レスポンスを残す（原因調査のため）

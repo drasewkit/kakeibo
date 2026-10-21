@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { REGISTRATION_ENABLED } from "@/lib/features";
 
 const PUBLIC_PATHS = ["/login", "/register"];
 const SESSION_COOKIE_NAME = "kakeibo-session";
@@ -9,6 +10,11 @@ const SESSION_COOKIE_NAME = "kakeibo-session";
 // 未ログイン状態でのフラッシュ表示を防ぐためのUX目的のガードで、
 // 本当の認証チェックはクライアント側の/api/auth/get-user呼び出し（401時リダイレクト）が担う。
 export function proxy(request: NextRequest) {
+  // 新規登録が無効のときは登録画面を開かせず、ログイン画面へ戻す
+  if (!REGISTRATION_ENABLED && request.nextUrl.pathname === "/register") {
+    return NextResponse.redirect(new URL("/login", request.url));
+  }
+
   const hasSession = request.cookies.has(SESSION_COOKIE_NAME);
   const isPublicPath = PUBLIC_PATHS.some((path) =>
     request.nextUrl.pathname.startsWith(path),

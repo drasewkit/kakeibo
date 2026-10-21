@@ -14,6 +14,7 @@ import { useRouter } from "next/navigation";
 import { SubmitEvent, useEffect, useState } from "react";
 import { useLogin, useUser } from "@/hooks/useAuth";
 import { getErrorMessage } from "@/lib/errors";
+import { REGISTRATION_ENABLED } from "@/lib/features";
 
 // ログイン画面（メールアドレス・パスワードによる認証）
 export function LoginPage() {
@@ -86,12 +87,19 @@ export function LoginPage() {
             </Button>
           </Stack>
         </Box>
-        <Typography variant="body2" color="text.secondary" sx={{ mt: 3 }}>
-          アカウントをお持ちでない方は{" "}
-          <Link component={NextLink} href="/register" sx={{ fontWeight: 600 }}>
-            新規登録
-          </Link>
-        </Typography>
+        {/* 新規登録を受け付けていないときは導線を出さない */}
+        {REGISTRATION_ENABLED && (
+          <Typography variant="body2" color="text.secondary" sx={{ mt: 3 }}>
+            アカウントをお持ちでない方は{" "}
+            <Link
+              component={NextLink}
+              href="/register"
+              sx={{ fontWeight: 600 }}
+            >
+              新規登録
+            </Link>
+          </Typography>
+        )}
       </Paper>
     </Container>
   );
