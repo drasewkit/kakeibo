@@ -49,23 +49,23 @@ git pull    # 出力の変更ファイル一覧で、frontend / backend のど�
 **frontend だけ変わった場合**（ビルド約4分）
 
 ```bash
-docker compose -f docker-compose.prod.yml build frontend
+docker compose -f docker-compose.prod.yml build --pull frontend
 docker compose -f docker-compose.prod.yml up -d frontend
 ```
 
 **backend も変わった場合**（`backend/lang` のような設定ファイルだけの変更も含む）
 
 ```bash
-docker compose -f docker-compose.prod.yml build backend
-docker compose -f docker-compose.prod.yml build frontend
+docker compose -f docker-compose.prod.yml build --pull backend
+docker compose -f docker-compose.prod.yml build --pull frontend
 docker compose -f docker-compose.prod.yml up -d backend frontend
 ```
 
 **`backend/database/migrations/` が変わった場合**は、上の `up -d` の代わりに、backend を止めてから移行して起動する
 
 ```bash
-docker compose -f docker-compose.prod.yml build backend
-docker compose -f docker-compose.prod.yml build frontend
+docker compose -f docker-compose.prod.yml build --pull backend
+docker compose -f docker-compose.prod.yml build --pull frontend
 docker compose -f docker-compose.prod.yml stop backend
 docker compose -f docker-compose.prod.yml run --rm backend php artisan migrate --force
 docker compose -f docker-compose.prod.yml up -d backend frontend
@@ -79,6 +79,9 @@ docker compose -f docker-compose.prod.yml up -d backend frontend
 - 2026-10-21 の世帯の導入（`household_id` の追加）はこの手順で反映した
 
 - ビルドは**必ず1つずつ**。同時に走らせるとメモリ 1GiB では足りない
+- `build` には**必ず `--pull` を付ける**。元イメージ（`php:8.5-fpm-alpine`・`node:22-alpine`・`composer:2`）は中身が更新され続けるタグで、
+  `--pull` が無いとサーバに残った古いイメージが使われ、PHP や Node のセキュリティ修正が取り込まれない
+  - 代わりに、アプリの変更と一緒に PHP・Node・Alpine のバージョンも上がることがある。ビルドの失敗や挙動の変化がアプリの差分で説明できなければ、まず元イメージの更新を疑う
 - Session Manager は **20分無操作で切断**される。長いビルドは下の「長いビルドを接続と切り離す」を使う
 - 反映後は実機（iPhone）で該当の画面を再読み込みして確認する
 
@@ -88,8 +91,8 @@ docker compose -f docker-compose.prod.yml up -d backend frontend
 
 ```bash
 git checkout <戻したいマージコミット>
-docker compose -f docker-compose.prod.yml build backend
-docker compose -f docker-compose.prod.yml build frontend
+docker compose -f docker-compose.prod.yml build --pull backend
+docker compose -f docker-compose.prod.yml build --pull frontend
 docker compose -f docker-compose.prod.yml up -d backend frontend
 # 直ったら修正をリリースし、git checkout main && git pull で main に戻す
 ```
@@ -192,8 +195,8 @@ openssl rand -base64 32    # APP_KEY 用。backend/.env に APP_KEY=base64:<出�
 ビルドは1つずつ。初回は時間がかかるため、接続と切り離して走らせる（下の「長いビルドを接続と切り離す」）。
 
 ```bash
-docker compose -f docker-compose.prod.yml build backend
-docker compose -f docker-compose.prod.yml build frontend
+docker compose -f docker-compose.prod.yml build --pull backend
+docker compose -f docker-compose.prod.yml build --pull frontend
 docker compose -f docker-compose.prod.yml up -d
 docker compose -f docker-compose.prod.yml exec backend php artisan migrate --force
 docker compose -f docker-compose.prod.yml exec backend php artisan db:seed --force
@@ -220,8 +223,32 @@ curl -si https://kakeibo.drasewkit.dev/sanctum/csrf-cookie | grep -i set-cookie
 ### 長いビルドを接続と切り離す
 
 ```bash
-nohup docker compose -f docker-compose.prod.yml build backend > /tmp/build-backend.log 2>&1 &
+nohup docker compose -f docker-compose.prod.yml build --pull backend > /tmp/build-backend.log 2>&1 &
 tail -f /tmp/build-backend.log    # Ctrl+C で抜けてもビルドは続く
+```
+
+### PHP・Node の脆弱性に対応する
+
+アプリのコードが変わっていなくても、元イメージを取り直して作り直せば修正版が入る。`git pull`・マイグレーションは要らない。
+2026-10-22 の PHP の脆弱性（PHP2Shell、CVE-2026-109618 / 109619）はこの手順で PHP 8.5.12 に上げた。
+
+```bash
+docker compose -f docker-compose.prod.yml exec backend php -v    # 更新前のバージョンを控える
+docker compose -f docker-compose.prod.yml build --pull backend   # Node なら frontend
+docker compose -f docker-compose.prod.yml up -d backend
+docker compose -f docker-compose.prod.yml exec backend php -v    # 修正版になったことを確認する
+```
+
+- `up -d` でコンテナを作り直すと、古いコンテナのログは消える。攻撃の跡を見たいときは、**作り直す前に** `logs backend` を確認する
+  （作り直したあとでも、nginx のログに PHP の異常終了による 502 が残る）
+
+### 古いイメージを片付ける
+
+`--pull` で取り直すたびに古いイメージが残り、EBS（20GiB）を圧迫する。ときどき片付ける。
+
+```bash
+df -h /                  # 空き容量を見る
+docker image prune -f    # どのコンテナからも使われていない、名前の無いイメージを消す
 ```
 
 ### 状態を見る
