@@ -244,7 +244,7 @@ docker compose -f docker-compose.prod.yml exec backend php -v    # 修正版に�
 ```
 
 - `up -d` でコンテナを作り直すと、古いコンテナのログは消える。攻撃の跡を見たいときは、**作り直す前に** `logs backend` を確認する
-  （作り直したあとでも、nginx のログに PHP の異常終了による 502 が残る）
+  （nginx のコンテナを作り直していなければ、backend を作り直したあとでも `logs nginx` で backend への 502 などのエラーを確認できる）
 
 **nginx・cloudflared**（`image:` で指定しているもの。`build --pull` では更新されないため、`pull` で取り直す）
 
