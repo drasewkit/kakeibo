@@ -27,6 +27,8 @@ class RegisterRequest extends FormRequest
             'email' => ['required', 'email', 'unique:users,email'],
             // passwordConfirmationとの一致・最低文字数を検証
             'password' => ['required', 'confirmed:passwordConfirmation', Password::min(8)],
+            // 招待リンクから登録する場合のトークン（あれば招待先の世帯に入る）
+            'invitationToken' => ['nullable', 'string', 'max:100'],
         ];
     }
 }
