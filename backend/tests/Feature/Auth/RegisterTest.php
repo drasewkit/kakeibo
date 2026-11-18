@@ -238,4 +238,19 @@ class RegisterTest extends TestCase
             ->assertStatus(404)
             ->assertJsonPath('error.code', 'NOT_FOUND');
     }
+
+    public function test_新規登録が無効のときでたらめなトークンで繰り返すと429になる(): void
+    {
+        // 404で断る登録の試行も回数に数え、トークンの総当たりを1分30回までに抑える
+        config(['auth.registration_enabled' => false]);
+
+        for ($i = 0; $i < 30; $i++) {
+            $this->postJson('/api/auth/register', $this->validPayload(['invitationToken' => 'made-up-token'.$i]))
+                ->assertNotFound();
+        }
+
+        $this->postJson('/api/auth/register', $this->validPayload(['invitationToken' => 'made-up-token']))
+            ->assertStatus(429)
+            ->assertJsonPath('error.code', 'TOO_MANY_REQUESTS');
+    }
 }
