@@ -82,6 +82,7 @@ docker compose -f docker-compose.prod.yml up -d backend frontend
 - `build` には**必ず `--pull` を付ける**。元イメージ（`php:8.5-fpm-alpine`・`node:22-alpine`・`composer:2`）は中身が更新され続けるタグで、
   `--pull` が無いとサーバに残った古いイメージが使われ、PHP や Node のセキュリティ修正が取り込まれない
   - 代わりに、アプリの変更と一緒に PHP・Node・Alpine のバージョンも上がることがある。ビルドの失敗や挙動の変化がアプリの差分で説明できなければ、まず元イメージの更新を疑う
+  - nginx・MySQL・cloudflared はビルドしないため、この手順では更新されない（下の「元イメージの脆弱性に対応する」を参照）
 - Session Manager は **20分無操作で切断**される。長いビルドは下の「長いビルドを接続と切り離す」を使う
 - 反映後は実機（iPhone）で該当の画面を再読み込みして確認する
 
@@ -227,9 +228,12 @@ nohup docker compose -f docker-compose.prod.yml build --pull backend > /tmp/buil
 tail -f /tmp/build-backend.log    # Ctrl+C で抜けてもビルドは続く
 ```
 
-### PHP・Node の脆弱性に対応する
+### 元イメージの脆弱性に対応する
 
 アプリのコードが変わっていなくても、元イメージを取り直して作り直せば修正版が入る。`git pull`・マイグレーションは要らない。
+
+**PHP・Node**（ビルドする backend / frontend）
+
 2026-10-22 の PHP の脆弱性（PHP2Shell、CVE-2026-109618 / 109619）はこの手順で PHP 8.5.12 に上げた。
 
 ```bash
@@ -241,6 +245,30 @@ docker compose -f docker-compose.prod.yml exec backend php -v    # 修正版に�
 
 - `up -d` でコンテナを作り直すと、古いコンテナのログは消える。攻撃の跡を見たいときは、**作り直す前に** `logs backend` を確認する
   （作り直したあとでも、nginx のログに PHP の異常終了による 502 が残る）
+
+**nginx・cloudflared**（`image:` で指定しているもの。`build --pull` では更新されないため、`pull` で取り直す）
+
+```bash
+docker compose -f docker-compose.prod.yml images nginx    # 更新前のイメージIDを控える（cloudflared も同様）
+docker compose -f docker-compose.prod.yml pull nginx
+docker compose -f docker-compose.prod.yml up -d nginx
+docker compose -f docker-compose.prod.yml images nginx    # イメージIDが変わったことを確認する
+```
+
+- 作り直すあいだの数秒はサイトに届かない。nginx のログも消えるため、見たいときは先に `logs nginx` を確認する
+
+**MySQL**（`mysql:8.4`。同じ 8.4 系の修正版が入る）
+
+作り直すあいだは backend が DB に繋がらずエラーになる。データはボリューム（`kakeibo-mysql`）に残るが、バックアップが無いため、先にダンプを取っておく。
+
+```bash
+docker compose -f docker-compose.prod.yml exec mysql sh -c 'mysqldump -uroot -p"$MYSQL_ROOT_PASSWORD" --all-databases --single-transaction' > ~/mysql-before-update.sql
+docker compose -f docker-compose.prod.yml pull mysql
+docker compose -f docker-compose.prod.yml up -d mysql
+docker compose -f docker-compose.prod.yml exec mysql mysql --version    # 修正版になったことを確認する
+```
+
+- ダンプには家計簿のデータがそのまま入る。確認が済んだら消す
 
 ### 古いイメージを片付ける
 
