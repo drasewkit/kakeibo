@@ -270,14 +270,19 @@ docker compose -f docker-compose.prod.yml exec mysql mysql --version    # 修正
 
 - ダンプには家計簿のデータがそのまま入る。確認が済んだら消す
 
-### 古いイメージを片付ける
+### 古いイメージとビルドのキャッシュを片付ける
 
-`--pull` で取り直すたびに古いイメージが残り、EBS（20GiB）を圧迫する。ときどき片付ける。
+`--pull` で取り直すたびに古いイメージが残り、ビルドのたびにキャッシュ（`npm ci`・`composer install` の層など）も溜まって、EBS（20GiB）を圧迫する。ときどき片付ける。
 
 ```bash
-df -h /                  # 空き容量を見る
-docker image prune -f    # どのコンテナからも使われていない、名前の無いイメージを消す
+df -h /                                         # ディスク全体の空き容量を見る
+docker system df                                # イメージ・コンテナ・ボリューム・ビルドキャッシュごとの使用量を見る
+docker image prune -f                           # どのコンテナからも使われていない、名前の無いイメージを消す
+docker builder prune -f --filter until=168h     # 7日より前のビルドキャッシュを消す
 ```
+
+- ビルドキャッシュを消した部分は、次のビルドで作り直すため時間がかかる。`--filter until=168h` で直近のキャッシュは残す
+- `docker volume prune` や `docker system prune --volumes` は使わない。MySQL と添付画像のボリュームを消すおそれがある
 
 ### 状態を見る
 
