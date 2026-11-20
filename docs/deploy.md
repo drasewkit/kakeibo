@@ -262,12 +262,14 @@ docker compose -f docker-compose.prod.yml images nginx    # イメージIDが変
 作り直すあいだは backend が DB に繋がらずエラーになる。データはボリューム（`kakeibo-mysql`）に残るが、バックアップが無いため、先にダンプを取っておく。
 
 ```bash
-docker compose -f docker-compose.prod.yml exec mysql sh -c 'mysqldump -uroot -p"$MYSQL_ROOT_PASSWORD" --all-databases --single-transaction' > ~/mysql-before-update.sql
+docker compose -f docker-compose.prod.yml exec -T mysql sh -c 'mysqldump -uroot -p"$MYSQL_ROOT_PASSWORD" --all-databases --single-transaction' > ~/mysql-before-update.sql
+tail -n 1 ~/mysql-before-update.sql    # 「-- Dump completed」で終わっていれば最後まで取れている
 docker compose -f docker-compose.prod.yml pull mysql
 docker compose -f docker-compose.prod.yml up -d mysql
 docker compose -f docker-compose.prod.yml exec mysql mysql --version    # 修正版になったことを確認する
 ```
 
+- ファイルに書き出す `exec` には **`-T` を付ける**。付けないと疑似端末が割り当てられ、改行コードが変わったり、パスワードの警告がダンプに混ざったりして、復元できないファイルになるおそれがある
 - ダンプには家計簿のデータがそのまま入る。確認が済んだら消す
 
 ### 古いイメージとビルドのキャッシュを片付ける
