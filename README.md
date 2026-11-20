@@ -34,8 +34,9 @@ Next.js（React）+ Laravel で作る家計簿アプリ。
 ```mermaid
 flowchart LR
   user[ブラウザ / スマホのPWA] -->|HTTPS| cf[Cloudflare]
-  cf -->|Cloudflare Tunnel<br>EC2から外向きに接続| nginx
+  cf -->|Cloudflare Tunnel| cloudflared
   subgraph ec2[AWS EC2 t4g.micro / Docker Compose]
+    cloudflared --> nginx
     nginx -->|/api /sanctum /up| backend[Laravel<br>php-fpm]
     nginx -->|それ以外| frontend[Next.js]
     backend --> mysql[(MySQL 8.4)]
@@ -44,7 +45,7 @@ flowchart LR
 ```
 
 - フロントと API を1つのホストにまとめ、nginx がパスで振り分ける**同一オリジン構成**（CORS が不要になり、iOS の SameSite 制約も避けられる）
-- セキュリティグループの**インバウンドはすべて閉じ**、外部からの到達は Cloudflare Tunnel 経由だけ。サーバへの接続は SSM Session Manager で、SSH 鍵は作らない
+- セキュリティグループの**インバウンドはすべて閉じ**、外部からの到達は Cloudflare Tunnel 経由だけ。EC2 上の cloudflared コンテナが Cloudflare へ外向きに接続し、受けたリクエストを nginx に渡す。サーバへの接続は SSM Session Manager で、SSH 鍵は作らない
 - 構築・リリース・脆弱性対応の手順は [`docs/deploy.md`](./docs/deploy.md) にまとめている
 
 ## 設計で決めたこと
