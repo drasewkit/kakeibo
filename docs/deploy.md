@@ -49,23 +49,23 @@ git pull    # 出力の変更ファイル一覧で、frontend / backend のど�
 **frontend だけ変わった場合**（ビルド約4分）
 
 ```bash
-docker compose -f docker-compose.prod.yml build frontend
+docker compose -f docker-compose.prod.yml build --pull frontend
 docker compose -f docker-compose.prod.yml up -d frontend
 ```
 
 **backend も変わった場合**（`backend/lang` のような設定ファイルだけの変更も含む）
 
 ```bash
-docker compose -f docker-compose.prod.yml build backend
-docker compose -f docker-compose.prod.yml build frontend
+docker compose -f docker-compose.prod.yml build --pull backend
+docker compose -f docker-compose.prod.yml build --pull frontend
 docker compose -f docker-compose.prod.yml up -d backend frontend
 ```
 
 **`backend/database/migrations/` が変わった場合**は、上の `up -d` の代わりに、backend を止めてから移行して起動する
 
 ```bash
-docker compose -f docker-compose.prod.yml build backend
-docker compose -f docker-compose.prod.yml build frontend
+docker compose -f docker-compose.prod.yml build --pull backend
+docker compose -f docker-compose.prod.yml build --pull frontend
 docker compose -f docker-compose.prod.yml stop backend
 docker compose -f docker-compose.prod.yml run --rm backend php artisan migrate --force
 docker compose -f docker-compose.prod.yml up -d backend frontend
@@ -79,6 +79,10 @@ docker compose -f docker-compose.prod.yml up -d backend frontend
 - 2026-10-21 の世帯の導入（`household_id` の追加）はこの手順で反映した
 
 - ビルドは**必ず1つずつ**。同時に走らせるとメモリ 1GiB では足りない
+- `build` には**必ず `--pull` を付ける**。元イメージ（`php:8.5-fpm-alpine`・`node:22-alpine`・`composer:2`）は中身が更新され続けるタグで、
+  `--pull` が無いとサーバに残った古いイメージが使われ、PHP や Node のセキュリティ修正が取り込まれない
+  - 代わりに、アプリの変更と一緒に PHP・Node・Alpine のバージョンも上がることがある。ビルドの失敗や挙動の変化がアプリの差分で説明できなければ、まず元イメージの更新を疑う
+  - nginx・MySQL・cloudflared はビルドしないため、この手順では更新されない（下の「元イメージの脆弱性に対応する」を参照）
 - Session Manager は **20分無操作で切断**される。長いビルドは下の「長いビルドを接続と切り離す」を使う
 - 反映後は実機（iPhone）で該当の画面を再読み込みして確認する
 
@@ -88,8 +92,8 @@ docker compose -f docker-compose.prod.yml up -d backend frontend
 
 ```bash
 git checkout <戻したいマージコミット>
-docker compose -f docker-compose.prod.yml build backend
-docker compose -f docker-compose.prod.yml build frontend
+docker compose -f docker-compose.prod.yml build --pull backend
+docker compose -f docker-compose.prod.yml build --pull frontend
 docker compose -f docker-compose.prod.yml up -d backend frontend
 # 直ったら修正をリリースし、git checkout main && git pull で main に戻す
 ```
@@ -192,8 +196,8 @@ openssl rand -base64 32    # APP_KEY 用。backend/.env に APP_KEY=base64:<出�
 ビルドは1つずつ。初回は時間がかかるため、接続と切り離して走らせる（下の「長いビルドを接続と切り離す」）。
 
 ```bash
-docker compose -f docker-compose.prod.yml build backend
-docker compose -f docker-compose.prod.yml build frontend
+docker compose -f docker-compose.prod.yml build --pull backend
+docker compose -f docker-compose.prod.yml build --pull frontend
 docker compose -f docker-compose.prod.yml up -d
 docker compose -f docker-compose.prod.yml exec backend php artisan migrate --force
 docker compose -f docker-compose.prod.yml exec backend php artisan db:seed --force
@@ -220,9 +224,67 @@ curl -si https://kakeibo.drasewkit.dev/sanctum/csrf-cookie | grep -i set-cookie
 ### 長いビルドを接続と切り離す
 
 ```bash
-nohup docker compose -f docker-compose.prod.yml build backend > /tmp/build-backend.log 2>&1 &
+nohup docker compose -f docker-compose.prod.yml build --pull backend > /tmp/build-backend.log 2>&1 &
 tail -f /tmp/build-backend.log    # Ctrl+C で抜けてもビルドは続く
 ```
+
+### 元イメージの脆弱性に対応する
+
+アプリのコードが変わっていなくても、元イメージを取り直して作り直せば修正版が入る。`git pull`・マイグレーションは要らない。
+
+**PHP・Node**（ビルドする backend / frontend）
+
+2026-10-22 の PHP の脆弱性（PHP2Shell、CVE-2026-109618 / 109619）はこの手順で PHP 8.5.12 に上げた。
+
+```bash
+docker compose -f docker-compose.prod.yml exec backend php -v    # 更新前のバージョンを控える
+docker compose -f docker-compose.prod.yml build --pull backend   # Node なら frontend
+docker compose -f docker-compose.prod.yml up -d backend
+docker compose -f docker-compose.prod.yml exec backend php -v    # 修正版になったことを確認する
+```
+
+- `up -d` でコンテナを作り直すと、古いコンテナのログは消える。攻撃の跡を見たいときは、**作り直す前に** `logs backend` を確認する
+  （nginx のコンテナを作り直していなければ、backend を作り直したあとでも `logs nginx` で backend への 502 などのエラーを確認できる）
+
+**nginx・cloudflared**（`image:` で指定しているもの。`build --pull` では更新されないため、`pull` で取り直す）
+
+```bash
+docker compose -f docker-compose.prod.yml images nginx    # 更新前のイメージIDを控える（cloudflared も同様）
+docker compose -f docker-compose.prod.yml pull nginx
+docker compose -f docker-compose.prod.yml up -d nginx
+docker compose -f docker-compose.prod.yml images nginx    # イメージIDが変わったことを確認する
+```
+
+- 作り直すあいだの数秒はサイトに届かない。nginx のログも消えるため、見たいときは先に `logs nginx` を確認する
+
+**MySQL**（`mysql:8.4`。同じ 8.4 系の修正版が入る）
+
+作り直すあいだは backend が DB に繋がらずエラーになる。データはボリューム（`kakeibo-mysql`）に残るが、バックアップが無いため、先にダンプを取っておく。
+
+```bash
+docker compose -f docker-compose.prod.yml exec -T mysql sh -c 'mysqldump -uroot -p"$MYSQL_ROOT_PASSWORD" --all-databases --single-transaction' > ~/mysql-before-update.sql
+tail -n 1 ~/mysql-before-update.sql    # 「-- Dump completed」で終わっていれば最後まで取れている
+docker compose -f docker-compose.prod.yml pull mysql
+docker compose -f docker-compose.prod.yml up -d mysql
+docker compose -f docker-compose.prod.yml exec mysql mysql --version    # 修正版になったことを確認する
+```
+
+- ファイルに書き出す `exec` には **`-T` を付ける**。付けないと疑似端末が割り当てられ、改行コードが変わったり、パスワードの警告がダンプに混ざったりして、復元できないファイルになるおそれがある
+- ダンプには家計簿のデータがそのまま入る。確認が済んだら消す
+
+### 古いイメージとビルドのキャッシュを片付ける
+
+`--pull` で取り直すたびに古いイメージが残り、ビルドのたびにキャッシュ（`npm ci`・`composer install` の層など）も溜まって、EBS（20GiB）を圧迫する。ときどき片付ける。
+
+```bash
+df -h /                                         # ディスク全体の空き容量を見る
+docker system df                                # イメージ・コンテナ・ボリューム・ビルドキャッシュごとの使用量を見る
+docker image prune -f                           # どのコンテナからも使われていない、名前の無いイメージを消す
+docker builder prune -f --filter until=168h     # 7日より前のビルドキャッシュを消す
+```
+
+- ビルドキャッシュを消した部分は、次のビルドで作り直すため時間がかかる。`--filter until=168h` で直近のキャッシュは残す
+- `docker volume prune` や `docker system prune --volumes` は使わない。MySQL と添付画像のボリュームを消すおそれがある
 
 ### 状態を見る
 
